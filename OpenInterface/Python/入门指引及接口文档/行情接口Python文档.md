@@ -618,7 +618,7 @@ ret_code失败时，ret_data返回为错误描述字符串；
 
 ### 获取经纪队列  get_broker_queue
 ```python
-ret_code, ask_data, bid_data = quote_ctx.get_broker_queue(code)
+ret_code, bid_data, ask_data = quote_ctx.get_broker_queue(code)
 ```
 
 
@@ -628,7 +628,7 @@ ret_code, ask_data, bid_data = quote_ctx.get_broker_queue(code)
 **code**: 股票代码, string, 例如，”HK.00700”
 
 **返回**：
-ret_code失败时，ret_data返回为错误描述字符串； 
+ret_code失败时，bid_data返回为错误描述字符串； 
 客户端无符合条件数据时，ret_code为成功，ask_data, bid_data返回None 
 正常情况下，ask_data, bid_data均为dataframe， 
 其中bid_data是买盘的数据，包括： 
@@ -740,6 +740,8 @@ ret_code失败时，ret_data返回为错误描述字符串；
 ret_code为成功，ret_data返回None 
 如果指定内容已退订，则直接返回成功 
 
+注意：如果订阅时push=False（默认参数就是False），那么对应的退订的unpush=False
+
 
 **失败情况**:
 1. 股票代码不合法，不存在
@@ -794,7 +796,23 @@ ret_code, ret_data = quote_ctx.get_stock_quote(code_list)
 **返回**： 
 ret_code失败时，ret_data返回为错误描述字符串； 
 客户端无符合条件数据时，ret_code为成功，返回None 
-正常情况下，ret_data为一个dataframe，其结构和get_market_snapshot一样
+正常情况下，ret_data为一个dataframe，其中包括：
+
+**code** ：股票代码；string
+**data_date**:      日期： str
+**data_time**:      时间：str
+**last_price** ： 	 最新价格；float 
+**open_price**：	 今日开盘价；float 
+**high_price**：	 最高价格；float 
+**low_price**：	     最低价格；float 
+**prev_close_price**：	昨收盘价格；float 
+**volume**：	成交数量； long 
+**turnover**：	成交金额；float 
+**turnover_rate**：	换手率；float 
+**amplitude** :     振幅：int
+**suspension**：	  是否停牌(True表示停牌)；bool 
+**listing_date** ：  上市日期 (yyyy-MM-dd)；string 
+
 
 **失败情况**: 
 1. codelist中股票代码不合法 
