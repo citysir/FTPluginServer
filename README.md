@@ -1,5 +1,7 @@
 # OpenQuant - 富途量化投资平台
 
+# 目前本项目已经迁移到最新的futuquant项目，地址 https://github.com/FutunnOpen/futuquant 相关资源和信息都已经迁移，希望大家支持!
+
 ### 简介
 
 ​	OpenQuant开源项目可以满足使用**富途牛牛**软件进行量化投资的需求。提供包括Python接口、Json接口的行情及交易的API。
