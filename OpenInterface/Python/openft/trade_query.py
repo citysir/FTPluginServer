@@ -1,94 +1,31 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright 2017 Futu Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+"""
+    Trade query
+"""
 import sys
 import json
 from datetime import datetime
-from datetime import timedelta
 
-
-'''
- parameter relation Mappings between PLS and Python programs
-'''
-mkt_map = {"HK": 1,
-           "US": 2,
-           "SH": 3,
-           "SZ": 4,
-           "HK_FUTURE": 6
-           }
-rev_mkt_map = {mkt_map[x]: x for x in mkt_map}
-
-
-sec_type_map = {"STOCK": 3,
-                "IDX": 6,
-                "ETF": 4,
-                "WARRANT": 5,
-                "BOND": 1
-                }
-rev_sec_type_map = {sec_type_map[x]: x for x in sec_type_map}
-
-
-subtype_map = {"TICKER": 4,
-               "QUOTE":  1,
-               "ORDER_BOOK": 2,
-               "K_1M":    11,
-               "K_5M":     7,
-               "K_15M":    8,
-               "K_30M":    9,
-               "K_60M":   10,
-               "K_DAY":    6,
-               "K_WEEK":  12,
-               "K_MON":   13
-               }
-rev_subtype_map = {subtype_map[x]: x for x in subtype_map}
-
-
-ktype_map = {"K_1M":     1,
-             "K_5M":     6,
-             "K_15M":    7,
-             "K_30M":    8,
-             "K_60M":    9,
-             "K_DAY":    2,
-             "K_WEEK":   3,
-             "K_MON":    4
-             }
-
-rev_ktype_map = {ktype_map[x]: x for x in ktype_map}
-
-autype_map = {None: 0,
-              "qfq": 1,
-              "hfq": 2
-              }
-
-rev_autype_map = {autype_map[x]: x for x in autype_map}
-
-
-ticker_direction = {"TT_BUY": 1,
-                    "TT_SELL": 2,
-                    "TT_NEUTRAL": 3
-                    }
-
-rev_ticker_direction = {ticker_direction[x]: x for x in ticker_direction}
-
-order_status = {"CANCEL": 0,
-                "INVALID": 1,
-                "VALID": 2,
-                "DELETE": 3}
-
-rev_order_status = {order_status[x]: x for x in order_status}
-
-envtype_map = {"TRUE": 0,
-               "SIMULATE": 1}
-
-rev_envtype_map = {envtype_map[x]: x for x in envtype_map}
-
-
-RET_OK = 0
-RET_ERROR = -1
-
-ERROR_STR_PREFIX = 'ERROR. '
+from .constant import *
 
 
 def check_date_str_format(s):
+    """Check the format of date string"""
     try:
         _ = datetime.strptime(s, "%Y-%m-%d")
         return RET_OK, None
@@ -99,6 +36,7 @@ def check_date_str_format(s):
 
 
 def extract_pls_rsp(rsp_str):
+    """Extract the response of PLS"""
     try:
         rsp = json.loads(rsp_str)
     except ValueError:
@@ -120,13 +58,14 @@ def extract_pls_rsp(rsp_str):
 
 
 def normalize_date_format(date_str):
+    """normalize the format of data"""
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
     ret = date_obj.strftime("%Y-%m-%d")
     return ret
 
 
 def split_stock_str(stock_str):
-
+    """split the stock string"""
     if isinstance(stock_str, str) is False:
         error_str = ERROR_STR_PREFIX + "value of stock_str is %s of type %s, and type %s is expected" \
                                        % (stock_str, type(stock_str), str(str))
@@ -136,9 +75,9 @@ def split_stock_str(stock_str):
     '''do not use the built-in split function in python.
     The built-in function cannot handle some stock strings correctly.
     for instance, US..DJI, where the dot . itself is a part of original code'''
-    if 0 <= split_loc < len(stock_str) - 1 and stock_str[0:split_loc] in mkt_map:
+    if 0 <= split_loc < len(stock_str) - 1 and stock_str[0:split_loc] in MKT_MAP:
         market_str = stock_str[0:split_loc]
-        market_code = mkt_map[market_str]
+        market_code = MKT_MAP[market_str]
         partial_stock_str = stock_str[split_loc+1:]
         return RET_OK, (market_code, partial_stock_str)
 
@@ -150,19 +89,21 @@ def split_stock_str(stock_str):
 
 def merge_stock_str(market, partial_stock_str):
     """
+    Merge the string of stocks
     :param market: market code
     :param partial_stock_str: original stock code string. i.e. "AAPL","00700", "000001"
     :return: unified representation of a stock code. i.e. "US.AAPL", "HK.00700", "SZ.000001"
 
     """
 
-    market_str = rev_mkt_map[market]
+    market_str = TRADE.REV_MKT_MAP[market]
     stock_str = '.'.join([market_str, partial_stock_str])
     return stock_str
 
 
 def str2binary(s):
     """
+    Transfer string to binary
     :param s: string content to be transformed to binary
     :return: binary
     """
@@ -171,7 +112,7 @@ def str2binary(s):
 
 def binary2str(b):
     """
-
+    Transfer binary to string
     :param b: binary content to be transformed to string
     :return: string
     """
@@ -179,12 +120,13 @@ def binary2str(b):
 
 
 class UnlockTrade:
+    """Unlock trade limitation lock"""
     def __init__(self):
         pass
 
     @classmethod
     def pack_req(cls, cookie, password):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "6006",
                "Version": "1",
                "ReqParam": {"Cookie": cookie,
@@ -196,7 +138,7 @@ class UnlockTrade:
 
     @classmethod
     def unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -216,12 +158,13 @@ class UnlockTrade:
 
 
 class PlaceOrder:
+    """Palce order class"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype, orderside, ordertype, price, qty, strcode):
-
+        """Convert from user request for trading days to PLS request"""
         if int(orderside) < 0 or int(orderside) > 1:
             error_str = ERROR_STR_PREFIX + "parameter orderside is wrong"
             return RET_ERROR, error_str, None
@@ -250,7 +193,7 @@ class PlaceOrder:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -276,12 +219,13 @@ class PlaceOrder:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype, orderside, ordertype, price, qty, strcode):
-
+        """Convert from user request for trading days to PLS request"""
         if int(orderside) < 0 or int(orderside) > 1:
             error_str = ERROR_STR_PREFIX + "parameter orderside is wrong"
             return RET_ERROR, error_str, None
 
-        if int(ordertype) is not 1 and int(ordertype) is not 2 and int(ordertype) is not 51 and int(ordertype) is not 52:
+        if int(ordertype) is not 1 and int(ordertype) is not 2 \
+                and int(ordertype) is not 51 and int(ordertype) is not 52:
             error_str = ERROR_STR_PREFIX + "parameter ordertype is wrong"
             return RET_ERROR, error_str, None
 
@@ -301,7 +245,7 @@ class PlaceOrder:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -327,12 +271,13 @@ class PlaceOrder:
 
 
 class SetOrderStatus:
+    """calss for setting status of order"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype, localid, orderid, status):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -355,7 +300,7 @@ class SetOrderStatus:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -385,7 +330,7 @@ class SetOrderStatus:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype, localid, orderid, status):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7004",
                "Version": "1",
                "ReqParam": {"Cookie": cookie,
@@ -400,7 +345,7 @@ class SetOrderStatus:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -430,12 +375,13 @@ class SetOrderStatus:
 
 
 class ChangeOrder:
+    """Class for changing order"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype, localid, orderid, price, qty):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -455,7 +401,7 @@ class ChangeOrder:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -485,7 +431,7 @@ class ChangeOrder:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype, localid, orderid, price, qty):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7005",
                "Version": "1",
                "ReqParam": {"Cookie": cookie,
@@ -501,7 +447,7 @@ class ChangeOrder:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -531,12 +477,13 @@ class ChangeOrder:
 
 
 class AccInfoQuery:
+    """Class for querying information of account"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -552,7 +499,7 @@ class AccInfoQuery:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -582,7 +529,7 @@ class AccInfoQuery:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7007",
                "Version": "1",
                "ReqParam": {"Cookie": str(cookie),
@@ -594,7 +541,7 @@ class AccInfoQuery:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -624,12 +571,13 @@ class AccInfoQuery:
 
 
 class OrderListQuery:
+    """Class for querying list queue"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype, statusfilter):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -646,7 +594,7 @@ class OrderListQuery:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -657,7 +605,7 @@ class OrderListQuery:
             error_str = ERROR_STR_PREFIX + "cannot find EnvType in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
-        if "HKOrderArr" not in rsp_data :
+        if "HKOrderArr" not in rsp_data:
             error_str = ERROR_STR_PREFIX + "cannot find HKOrderArr in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
@@ -683,7 +631,7 @@ class OrderListQuery:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype, statusfilter):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7008",
                "Version": "1",
                "ReqParam": {"Cookie": str(cookie),
@@ -696,14 +644,14 @@ class OrderListQuery:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
 
         rsp_data = rsp['RetData']
 
-        if "USOrderArr" not in rsp_data :
+        if "USOrderArr" not in rsp_data:
             error_str = ERROR_STR_PREFIX + "cannot find USOrderArr in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
@@ -729,12 +677,13 @@ class OrderListQuery:
 
 
 class PositionListQuery:
+    """Class for querying position list"""
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -750,7 +699,7 @@ class PositionListQuery:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -760,7 +709,7 @@ class PositionListQuery:
         if 'Cookie' not in rsp_data or 'EnvType' not in rsp_data:
             return RET_ERROR, msg, None
 
-        if "HKPositionArr" not in rsp_data :
+        if "HKPositionArr" not in rsp_data:
             error_str = ERROR_STR_PREFIX + "cannot find HKPositionArr in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
@@ -791,7 +740,7 @@ class PositionListQuery:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7009",
                "Version": "1",
                "ReqParam": {"Cookie": cookie,
@@ -803,14 +752,14 @@ class PositionListQuery:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
 
         rsp_data = rsp['RetData']
 
-        if "USPositionArr" not in rsp_data :
+        if "USPositionArr" not in rsp_data:
             error_str = ERROR_STR_PREFIX + "cannot find USPositionArr in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
@@ -841,12 +790,13 @@ class PositionListQuery:
 
 
 class DealListQuery:
+    """Class for """
     def __init__(self):
         pass
 
     @classmethod
     def hk_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         if int(envtype) < 0 or int(envtype) > 1:
             error_str = ERROR_STR_PREFIX + "parameter envtype is wrong"
             return RET_ERROR, error_str, None
@@ -862,7 +812,7 @@ class DealListQuery:
 
     @classmethod
     def hk_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -872,7 +822,7 @@ class DealListQuery:
         if 'Cookie' not in rsp_data or 'EnvType' not in rsp_data:
             return RET_ERROR, msg, None
 
-        if "HKDealArr" not in rsp_data :
+        if "HKDealArr" not in rsp_data:
             error_str = ERROR_STR_PREFIX + "cannot find HKDealArr in client rsp. Response: %s" % rsp_str
             return RET_ERROR, error_str, None
 
@@ -894,7 +844,7 @@ class DealListQuery:
 
     @classmethod
     def us_pack_req(cls, cookie, envtype):
-
+        """Convert from user request for trading days to PLS request"""
         req = {"Protocol": "7010",
                "Version": "1",
                "ReqParam": {"Cookie": cookie,
@@ -906,7 +856,7 @@ class DealListQuery:
 
     @classmethod
     def us_unpack_rsp(cls, rsp_str):
-
+        """Convert from PLS response to user response"""
         ret, msg, rsp = extract_pls_rsp(rsp_str)
         if ret != RET_OK:
             return RET_ERROR, msg, None
@@ -932,4 +882,3 @@ class DealListQuery:
                       }
                      for deal in raw_deal_list]
         return RET_OK, "", deal_list
-

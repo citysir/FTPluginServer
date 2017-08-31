@@ -1,60 +1,72 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright 2017 Futu Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-#指定加载的openft api目录
-import os, sys
-sys.path.append(os.path.join(os.path.abspath(__file__),'../../'))
-from openft.open_quant_context import *
+"""
+验证接口：下单然后立即撤单, 为避免成交损失，买单价格港股放在十档，美股为一档下降10%, 买单数量为1手（美股为1股）
+"""
 
-from time import  sleep
-import threading
+from OpenInterface.Python.openft.open_quant_context import *
+from time import sleep
 
 '''
   验证接口：下单然后立即撤单, 为避免成交损失，买单价格港股放在十档，美股为一档下降10%, 买单数量为1手（美股为1股）
   使用请先配置正确参数:
   api_svr_ip: (string)ip
-  api_svr_port: (int)port
+  api_svr_port: (string)ip
   unlock_password: (string)交易解锁密码, 必需修改！！！
   test_code: (string)股票
   trade_env: (int)0 真实交易 1仿真交易  ( 美股暂不支持仿真）
 '''
 
-#全局参数配置
-api_svr_ip = '127.0.0.1'
-api_svr_port = 11111
-unlock_password = ""
-test_code = 'HK.00700' #'US.BABA' #'HK.00700'
-trade_env = 0
-#
 
-def make_order_and_cancel(api_svr_ip, api_svr_port , unlock_password, test_code, trade_env):
+def make_order_and_cancel(api_svr_ip, api_svr_port, unlock_password, test_code, trade_env):
+    """
+    使用请先配置正确参数:
+    :param api_svr_ip: (string) ip
+    :param api_svr_port: (string) ip
+    :param unlock_password: (string) 交易解锁密码, 必需修改!
+    :param test_code: (string) 股票
+    :param trade_env: (int) 0: 真实交易 1: 仿真交易 (美股暂不支持仿真)
+    """
     if unlock_password == "":
-        raise "请先配置交易解锁密码!"
+        raise Exception("请先配置交易解锁密码!")
 
-    # 创建行情api
-    quote_ctx = OpenQuoteContext(host=api_svr_ip, port=api_svr_port)
-    # 定阅摆盘
-    quote_ctx.subscribe(test_code, "ORDER_BOOK", push=False)
+    quote_ctx = OpenQuoteContext(host=api_svr_ip, port=api_svr_port)  # 创建行情api
+    quote_ctx.subscribe(test_code, "ORDER_BOOK", push=False)   # 定阅摆盘
 
     # 创建交易api
-    is_hk_trade = 'HK.' in (test_code)
+    is_hk_trade = 'HK.' in test_code
     if is_hk_trade:
         trade_ctx = OpenHKTradeContext(host=api_svr_ip, port=api_svr_port)
     else:
         if trade_env != 0:
-            raise "美股交易接口不支持仿真环境"
+            raise Exception("美股交易接口不支持仿真环境")
         trade_ctx = OpenUSTradeContext(host=api_svr_ip, port=api_svr_port)
 
-    # 每手
+    # 每手股数
     lot_size = 0
     is_unlock_trade = False
     is_fire_trade = False
     while not is_fire_trade:
         sleep(2)
-        # 解锁
-        if is_unlock_trade == False:
+        # 解锁交易
+        if not is_unlock_trade:
             ret_code, ret_data = trade_ctx.unlock_trade(unlock_password)
             is_unlock_trade = (ret_code == 0)
-            if not is_unlock_trade:
+            if not trade_env and not is_unlock_trade:
                 print("请求交易解锁失败：{}".format(ret_data))
                 continue
 
@@ -67,18 +79,16 @@ def make_order_and_cancel(api_svr_ip, api_svr_port , unlock_password, test_code,
             elif lot_size <= 0:
                 raise BaseException("该股票每手信息错误，可能不支持交易 code ={}".format(test_code))
 
-        # 得到第十档数据
-        ret, data = quote_ctx.get_order_book(test_code)
+        ret, data = quote_ctx.get_order_book(test_code)  # 得到第十档数据
         if ret != 0:
             continue
 
         # 计算交易价格
-        price = 0.0
         bid_order_arr = data['Bid']
         if is_hk_trade:
             if len(bid_order_arr) != 10:
                 continue
-            # 港股下单： 价格定为第十档
+            # 港股下单: 价格定为第十档
             price, _, _ = bid_order_arr[9]
         else:
             if len(bid_order_arr) == 0:
@@ -94,7 +104,7 @@ def make_order_and_cancel(api_svr_ip, api_svr_port , unlock_password, test_code,
             continue
 
         # 交易类型
-        order_side = 0  # 买
+        order_side = 0      # 买
         if is_hk_trade:
             order_type = 0  # 港股增强限价单(普通交易)
         else:
@@ -112,25 +122,25 @@ def make_order_and_cancel(api_svr_ip, api_svr_port , unlock_password, test_code,
 
         # 循环撤单
         sleep(2)
-        order_status = 0
         if order_id != 0:
             while True:
-                ret_code, ret_data = trade_ctx.set_order_status(status=order_status, orderid=order_id, envtype=trade_env)
+                ret_code, ret_data = trade_ctx.set_order_status(status=0, orderid=order_id,
+                                                                envtype=trade_env)
                 print("撤单ret={} data={}".format(ret_code, ret_data))
                 if ret_code == 0:
                     break
                 else:
                     sleep(2)
-    #detroy obj
+    # destroy object
     quote_ctx.close()
     trade_ctx.close()
 
 
 if __name__ == "__main__":
-    make_order_and_cancel(api_svr_ip, api_svr_port, unlock_password, test_code, trade_env)
+    API_SVR_IP = '127.0.0.1'
+    API_SVR_PORT = 11111
+    UNLOCK_PASSWORD = "123"
+    TEST_CODE = 'HK.00700'  # 'US.BABA' 'HK.00700'
+    TRADE_ENV = 1
 
-
-
-
-
-
+    make_order_and_cancel(API_SVR_IP, API_SVR_PORT, UNLOCK_PASSWORD, TEST_CODE, TRADE_ENV)

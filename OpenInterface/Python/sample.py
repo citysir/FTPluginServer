@@ -1,8 +1,24 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright 2017 Futu Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from openft.open_quant_context import *
+"""
+Examples for use the python functions
+"""
 
-# Examples for use the python functions
+from OpenInterface.Python.openft.open_quant_context import *
 
 
 def _example_stock_quote(quote_ctx):
@@ -218,7 +234,7 @@ def _example_broker_queue(quote_ctx):
     for stk_code in stock_code_list:
         ret_status, bid_data, ask_data = quote_ctx.get_broker_queue(stk_code)
         if ret_status == RET_ERROR:
-            print(ret_data)
+            print(bid_data)
             exit()
         print("%s BROKER" % stk_code)
         print(ask_data)
@@ -283,7 +299,7 @@ class BrokerTest(BrokerHandlerBase):
     def on_recv_rsp(self, rsp_str):
         ret_code, content = super(BrokerTest, self).on_recv_rsp(rsp_str)
         if ret_code != RET_OK:
-            print("BrokerTest: error, msg: %s %s " % content)
+            print("BrokerTest: error, msg: %s" % content)
             return RET_ERROR, content
         print("BrokerTest", content[0])
         print("\n\n")
@@ -297,34 +313,32 @@ if __name__ == "__main__":
     # 获取推送数据
     quote_context.subscribe('HK.00700', "QUOTE", push=True)
     quote_context.set_handler(StockQuoteTest())
-    #
-    # quote_context.subscribe('HK.00700', "K_1M", push=True)
-    # quote_context.set_handler(CurKlineTest())
-    #
-    # quote_context.subscribe('HK.00700', "ORDER_BOOK", push=True)
-    # quote_context.set_handler(OrderBookTest())
-    #
-    # quote_context.subscribe('HK.00700', "TICKER", push=True)
-    # quote_context.set_handler(TickerTest())
-    #
-    # quote_context.subscribe('HK.00700', "RT_DATA", push=True)
-    # quote_context.set_handler(RTDataTest())
-    #
-    # quote_context.subscribe('HK.00700', "BROKER", push=True)
-    # quote_context.set_handler(BrokerTest())
+
+    quote_context.subscribe('HK.00700', "K_1M", push=True)
+    quote_context.set_handler(CurKlineTest())
+
+    quote_context.subscribe('HK.00700', "ORDER_BOOK", push=True)
+    quote_context.set_handler(OrderBookTest())
+
+    quote_context.subscribe('HK.00700', "TICKER", push=True)
+    quote_context.set_handler(TickerTest())
+
+    quote_context.subscribe('HK.00700', "RT_DATA", push=True)
+    quote_context.set_handler(RTDataTest())
+
+    quote_context.subscribe('HK.00700', "BROKER", push=True)
+    quote_context.set_handler(BrokerTest())
     quote_context.start()
 
     # 获取实时数据
     _example_stock_quote(quote_context)
-    # _example_get_market_snapshot(quote_context)
-    # _example_cur_kline(quote_context)
-    # _example_rt_ticker(quote_context)
-    # _example_order_book(quote_context)
-    # _example_get_trade_days(quote_context)
-    # _example_stock_basic(quote_context)
-    # _example_rt_data(quote_context)
-    # _example_plate_subplate(quote_context)
-    # _example_plate_stock(quote_context)
-    # _example_broker_queue(quote_context)
-
-
+    _example_get_market_snapshot(quote_context)
+    _example_cur_kline(quote_context)
+    _example_rt_ticker(quote_context)
+    _example_order_book(quote_context)
+    _example_get_trade_days(quote_context)
+    _example_stock_basic(quote_context)
+    _example_rt_data(quote_context)
+    _example_plate_subplate(quote_context)
+    _example_plate_stock(quote_context)
+    _example_broker_queue(quote_context)

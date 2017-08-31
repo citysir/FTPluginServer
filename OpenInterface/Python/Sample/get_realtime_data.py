@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright 2017 Futu Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-#指定加载的openft api目录
-import os, sys
-sys.path.append(os.path.join(os.path.abspath(__file__),'../../'))
-from openft.open_quant_context import *
+"""
+Examples for use the python functions: real-time data
+"""
 
-# Examples for use the python functions
+from OpenInterface.Python.openft.open_quant_context import *
 
 
 def _example_stock_quote(quote_ctx):
@@ -221,7 +234,7 @@ def _example_broker_queue(quote_ctx):
     for stk_code in stock_code_list:
         ret_status, bid_data, ask_data = quote_ctx.get_broker_queue(stk_code)
         if ret_status == RET_ERROR:
-            print(ret_data)
+            print(bid_data)
             exit()
         print("%s BROKER" % stk_code)
         print(ask_data)
@@ -256,5 +269,3 @@ if __name__ == "__main__":
     _example_plate_stock(quote_context)
     _example_broker_queue(quote_context)
     _example_global_state(quote_context)
-
-
