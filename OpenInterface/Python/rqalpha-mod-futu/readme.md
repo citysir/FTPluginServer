@@ -1,3 +1,7 @@
+# 本子项目已经建立单独的项目 rqalpha-mod-futu 项目地址为: https://github.com/FutunnOpen/rqalpha-mod-futu
+
+感谢你的关注！
+
 # rqalpha_mod_futu安装步骤
 **1. 安装python3.5**
 
