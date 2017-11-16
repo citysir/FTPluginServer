@@ -15,6 +15,7 @@ public:
 	static void DeleteCookieSocket(const UINT32 &Cookie);
 	static bool IsSafeSocket(const SOCKET &sock);
 	static void AddSafeSocket(const UINT32 &nCookie);
+	static bool GetSocketByCookie(UINT32 nCookie, SOCKET &sock);
 
 private:
 	static void Init();

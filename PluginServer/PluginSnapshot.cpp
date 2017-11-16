@@ -192,18 +192,18 @@ void CPluginSnapshot::NotifySnapshotResult(DWORD dwCookie, PluginStockSnapshot *
 		snapDst.nStockMarket = stMktCode.eMarketType;
 		snapDst.instrument_type = snapSrc.instrument_type;
 
-		snapDst.last_close_price = INT64(snapSrc.last_close_price * c_priceMultiply);
-		snapDst.nominal_price = INT64(snapSrc.nominal_price * c_priceMultiply);
-		snapDst.open_price = INT64(snapSrc.open_price * c_priceMultiply);
+		snapDst.last_close_price = INT64(round(snapSrc.last_close_price * c_priceMultiply));
+		snapDst.nominal_price = INT64(round(snapSrc.nominal_price * c_priceMultiply));
+		snapDst.open_price = INT64(round(snapSrc.open_price * c_priceMultiply));
 		snapDst.update_time = snapSrc.update_time;
 		snapDst.suspend_flag = snapSrc.suspend_flag;
 		snapDst.listing_status = snapSrc.listing_status;
 		snapDst.listing_date = snapSrc.listing_date;
 		snapDst.shares_traded = snapSrc.shares_traded;
-		snapDst.turnover = INT64(snapSrc.turnover * 1000);
-		snapDst.highest_price = INT64(snapSrc.highest_price * c_priceMultiply);
-		snapDst.lowest_price = INT64(snapSrc.lowest_price * c_priceMultiply);
-		snapDst.turnover_ratio = int(snapSrc.turnover_ratio * 10000);
+		snapDst.turnover = INT64(round(snapSrc.turnover * 1000));
+		snapDst.highest_price = INT64(round(snapSrc.highest_price * c_priceMultiply));
+		snapDst.lowest_price = INT64(round(snapSrc.lowest_price * c_priceMultiply));
+		snapDst.turnover_ratio = int(round(snapSrc.turnover_ratio * 100000));
 		
 		snapDst.nLostSize = snapSrc.nLotSize;
 
@@ -216,8 +216,8 @@ void CPluginSnapshot::NotifySnapshotResult(DWORD dwCookie, PluginStockSnapshot *
 		
 		if (snapSrc.stEquitiesData.bDataValid)
 		{
-			snapDst.nTatalMarketVal = ((INT64)(snapSrc.nominal_price * c_priceMultiply)) * snapSrc.stEquitiesData.nIssuedShares;
-			snapDst.nCircularMarketVal = ((INT64)(snapSrc.nominal_price * c_priceMultiply)) * snapSrc.stEquitiesData.nOutStandingShares;
+			snapDst.nTatalMarketVal = (INT64)round((snapSrc.nominal_price * c_priceMultiply) * snapSrc.stEquitiesData.nIssuedShares);
+			snapDst.nCircularMarketVal = (INT64)(round(snapSrc.nominal_price * c_priceMultiply) * snapSrc.stEquitiesData.nOutStandingShares);
 		}
 		else
 		{
@@ -229,26 +229,26 @@ void CPluginSnapshot::NotifySnapshotResult(DWORD dwCookie, PluginStockSnapshot *
 		snapDst.stWrtData.bDataValid = snapSrc.stWrtData.bDataValid;
 		snapDst.stWrtData.nWarrantType = snapSrc.stWrtData.nWarrantType;
 		snapDst.stWrtData.nConversionRatio = snapSrc.stWrtData.nConversionRatio;
-		snapDst.stWrtData.nStrikePrice = snapSrc.stWrtData.dbStrikePrice * c_priceMultiply;
+		snapDst.stWrtData.nStrikePrice = (INT64)round(snapSrc.stWrtData.dbStrikePrice * c_priceMultiply);
 		snapDst.stWrtData.nMaturityDate = snapSrc.stWrtData.nMaturityDate;
 		snapDst.stWrtData.nEndtradeDate = snapSrc.stWrtData.nEndtradeDate;
 		
 		StockMktType eMkt = StockMkt_None; wchar_t szCode[16] = { 0 }, szStockName[128] = { 0 };
-		if (m_pQuoteData && snapDst.stWrtData.bDataValid)
+		if (m_pQuoteData && snapDst.stWrtData.bDataValid && snapSrc.stWrtData.nWarrantOwnerID != 0)
 		{
 			m_pQuoteData->GetStockInfoByHashVal(snapSrc.stWrtData.nWarrantOwnerID, eMkt, szCode, szStockName);
 		}
 		CA::Unicode2UTF(szCode, snapDst.stWrtData.strOwnerStockCode);
 		snapDst.stWrtData.nOwnerStockMarket = (int)eMkt;
 
-		snapDst.stWrtData.nRecoveryPrice = snapSrc.stWrtData.dbRecoveryPrice * c_priceMultiply;
+		snapDst.stWrtData.nRecoveryPrice = (INT64)round(snapSrc.stWrtData.dbRecoveryPrice * c_priceMultiply);
 		snapDst.stWrtData.nStreetVol = snapSrc.stWrtData.nStreetVol;
 		snapDst.stWrtData.nIssueVol = snapSrc.stWrtData.nIssueVol;
-		snapDst.stWrtData.nOwnerStockPrice = snapSrc.stWrtData.dbOwnerStockPrice * c_priceMultiply;
-		snapDst.stWrtData.nStreetRatio = snapSrc.stWrtData.dbStreetRatio * 100000;
-		snapDst.stWrtData.nDelta = snapSrc.stWrtData.dbDelta * 1000;
-		snapDst.stWrtData.nImpliedVolatility = snapSrc.stWrtData.dbImpliedVolatility * 1000;
-		snapDst.stWrtData.nPremium = snapSrc.stWrtData.dbPremiun * 100000;
+		snapDst.stWrtData.nOwnerStockPrice = (INT64)round(snapSrc.stWrtData.dbOwnerStockPrice * c_priceMultiply);
+		snapDst.stWrtData.nStreetRatio = int(round(snapSrc.stWrtData.dbStreetRatio * 100000));
+		snapDst.stWrtData.nDelta = int(round(snapSrc.stWrtData.dbDelta * 1000));
+		snapDst.stWrtData.nImpliedVolatility = int(round(snapSrc.stWrtData.dbImpliedVolatility * 1000));
+		snapDst.stWrtData.nPremium = int(round(snapSrc.stWrtData.dbPremiun * 100000));
 
 		if (snapDst.stWrtData.bDataValid)
 		{
@@ -260,6 +260,17 @@ void CPluginSnapshot::NotifySnapshotResult(DWORD dwCookie, PluginStockSnapshot *
 			m_pQuoteData->TimeStampToStr(snapDst.nStockID, snapDst.stWrtData.nMaturityDate, szTime);
 			CA::Unicode2UTF(szTime, snapDst.stWrtData.strMaturityData);
 		}
+
+		snapDst.stEquitiesData.bDataValid = snapSrc.stEquitiesData.bDataValid;
+		snapDst.stEquitiesData.nIssuedShares = snapSrc.stEquitiesData.nIssuedShares;
+		snapDst.stEquitiesData.nNetAssetValue = (INT64)round(snapSrc.stEquitiesData.dbNetAssetValue * 1000);
+		snapDst.stEquitiesData.nNetProfit = (INT64)round(snapSrc.stEquitiesData.dbNetProfit * 1000);
+		snapDst.stEquitiesData.nEarningPerShare = (INT64)round(snapSrc.stEquitiesData.dbEarningPerShare * 1000);
+		snapDst.stEquitiesData.nOutStandingShares = snapSrc.stEquitiesData.nOutStandingShares;
+		snapDst.stEquitiesData.nNetAssetPerShare = (INT64)round(snapSrc.stEquitiesData.dbNetAssetPerShare * 1000);
+		snapDst.stEquitiesData.nEYRatio = (int)round(snapSrc.stEquitiesData.dbEYRatio * 1000);
+		snapDst.stEquitiesData.nPERatio = (int)round(snapSrc.stEquitiesData.dbPERatio * 1000);
+		snapDst.stEquitiesData.nPBRatio = (int)round(snapSrc.stEquitiesData.dbPBRatio * 1000);
 	}
 	
 	CProtoQuote proto;	

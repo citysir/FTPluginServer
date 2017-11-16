@@ -161,9 +161,6 @@
     <ClInclude Include="Protocol\ProtoOrderErrorPush.h">
       <Filter>Protocol\trade</Filter>
     </ClInclude>
-    <ClInclude Include="Protocol\ProtoOrderUpdatePush.h">
-      <Filter>Protocol\trade</Filter>
-    </ClInclude>
     <ClInclude Include="Protocol\ProtoPlaceOrder.h">
       <Filter>Protocol\trade</Filter>
     </ClInclude>
@@ -398,6 +395,69 @@
     <ClInclude Include="DelayOrderIDCvt_US.h">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="Protocol\ProtoPushHeartBeat.h">
+      <Filter>Protocol\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginPushHKOrder.h">
+      <Filter>Server\trade_hk</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoPushHKOrder.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoPushUSOrder.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginPushUSOrder.h">
+      <Filter>Server\trade_us</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoQueryHKHisOrder.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginQueryHKHisOrder.h">
+      <Filter>Server\trade_hk</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoQueryUSHisOrder.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginQueryUSHisOrder.h">
+      <Filter>Server\trade_us</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoPushUSDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoSubUSOrderDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoSubHKOrderDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginPushHKDeal.h">
+      <Filter>Server\trade_hk</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoPushHKDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginSubHKOrderDeal.h">
+      <Filter>Server\trade_hk</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginSubUSOrderDeal.h">
+      <Filter>Server\trade_us</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginPushUSDeal.h">
+      <Filter>Server\trade_us</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoQueryHKHisDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoQueryUSHisDeal.h">
+      <Filter>Protocol\trade</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginQueryHKHisDeal.h">
+      <Filter>Server\trade_hk</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginQueryUSHisDeal.h">
+      <Filter>Server\trade_us</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="JsonCpp\json_internalarray.inl">
@@ -490,9 +550,6 @@
       <Filter>Protocol\trade</Filter>
     </ClCompile>
     <ClCompile Include="Protocol\ProtoOrderErrorPush.cpp">
-      <Filter>Protocol\trade</Filter>
-    </ClCompile>
-    <ClCompile Include="Protocol\ProtoOrderUpdatePush.cpp">
       <Filter>Protocol\trade</Filter>
     </ClCompile>
     <ClCompile Include="Protocol\ProtoPlaceOrder.cpp">
@@ -719,6 +776,69 @@
     </ClCompile>
     <ClCompile Include="DelayOrderIDCvt_US.cpp">
       <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoPushHeartBeat.cpp">
+      <Filter>Protocol\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginPushHKOrder.cpp">
+      <Filter>Server\trade_hk</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoPushHKOrder.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoPushUSOrder.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginPushUSOrder.cpp">
+      <Filter>Server\trade_us</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoQueryHKHisOrder.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginQueryHKHisOrder.cpp">
+      <Filter>Server\trade_hk</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoQueryUSHisOrder.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginQueryUSHisOrder.cpp">
+      <Filter>Server\trade_us</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoPushUSDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoSubUSOrderDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoSubHKOrderDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginPushHKDeal.cpp">
+      <Filter>Server\trade_hk</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoPushHKDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginSubHKOrderDeal.cpp">
+      <Filter>Server\trade_hk</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginSubUSOrderDeal.cpp">
+      <Filter>Server\trade_us</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginPushUSDeal.cpp">
+      <Filter>Server\trade_us</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoQueryHKHisDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoQueryUSHisDeal.cpp">
+      <Filter>Protocol\trade</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginQueryHKHisDeal.cpp">
+      <Filter>Server\trade_hk</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginQueryUSHisDeal.cpp">
+      <Filter>Server\trade_us</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

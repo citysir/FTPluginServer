@@ -11,6 +11,11 @@
 #include "PluginQueryUSAccInfo.h"
 #include "PluginQueryUSPosition.h"
 #include "PluginQueryUSDeal.h"
+#include "PluginQueryUSHisOrder.h"
+#include "PluginQueryUSHisDeal.h"
+#include "PluginSubUSOrderDeal.h"
+#include "PluginPushUSOrder.h"
+#include "PluginPushUSDeal.h"
 
 class CPluginNetwork;
 
@@ -37,10 +42,14 @@ protected:
 	virtual void OnChangeOrder(UINT32 nCookie, Trade_SvrResult enSvrRet, UINT64 nOrderID, INT64 nErrHash);
 
 	//virtual void OnOrderErrNotify(Trade_Env enEnv, UINT64 nOrderID, Trade_OrderErrNotify_HK enErrNotify, UINT16 nErrCode);
+	virtual void OnUnlockTrade(UINT32 nCookie, Trade_SvrResult enSvrRet, UINT64 nErrCode);
 	virtual void OnQueryOrderList(UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder);
 	virtual void OnQueryDealList(UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrOrder);
 	virtual void OnQueryAccInfo(UINT32 nCookie, const Trade_AccInfo& accInfo, int nResult);
 	virtual void OnQueryPositionList(UINT32 nCookie, INT32 nCount, const Trade_PositionItem* pArrPosition);
+	virtual void OnQueryHisOrderList(UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder);
+	virtual void OnQueryHisDealList(UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal);
+	virtual void OnDealUpdate(const Trade_DealItem& dealItem);
 
 protected:
 	IFTPluginCore		*m_pPluginCore;
@@ -57,4 +66,11 @@ protected:
 	CPluginQueryUSPosition	m_QueryPos;
 
 	CPluginQueryUSDeal		m_QueryUSDeal;
+
+	CPluginQueryUSHisOrder	m_QueryHisOrder;
+	CPluginQueryUSHisDeal	m_QueryHisDeal;
+
+	CPluginPushUSOrder		m_PushUSOrder;
+	CPluginPushUSDeal		m_PushUSDeal;
+	CPluginSubUSOrderDeal	m_SubUSOrderDeal;
 };

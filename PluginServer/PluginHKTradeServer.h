@@ -12,6 +12,11 @@
 #include "PluginQueryHKOrder.h"
 #include "PluginQueryHKPosition.h"
 #include "PluginQueryHKDeal.h"
+#include "PluginQueryHKHisOrder.h"
+#include "PluginQueryHKHisDeal.h"
+#include "PluginSubHKOrderDeal.h"
+#include "PluginPushHKOrder.h"
+#include "PluginPushHKDeal.h"
 #include "IManage_SecurityNum.h"
 
 class CPluginNetwork;
@@ -39,11 +44,14 @@ protected:
 	virtual void OnSetOrderStatus(Trade_Env enEnv, UINT nCookie, Trade_SvrResult enSvrRet, UINT64 nOrderID, UINT16 nErrCode);
 	virtual void OnChangeOrder(Trade_Env enEnv, UINT nCookie, Trade_SvrResult enSvrRet, UINT64 nOrderID, UINT16 nErrCode);
 	virtual void OnOrderErrNotify(Trade_Env enEnv, UINT64 nOrderID, Trade_OrderErrNotify_HK enErrNotify, UINT16 nErrCode);
+	virtual void OnDealUpdate(Trade_Env enEnv, const Trade_DealItem& dealItem);
 
 	virtual void OnQueryOrderList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder);
 	virtual void OnQueryDealList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrOrder);
 	virtual void OnQueryAccInfo(Trade_Env enEnv, UINT32 nCookie, const Trade_AccInfo& accInfo, int nResult);
 	virtual void OnQueryPositionList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_PositionItem* pArrPosition);
+	virtual void OnQueryHisOrderList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder);
+	virtual void OnQueryHisDealList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal);
 
 protected:
 	IFTPluginCore		*m_pPluginCore;
@@ -61,4 +69,11 @@ protected:
 
 	CPluginQueryHKPosition	m_QueryHKPos;
 	CPluginQueryHKDeal		m_QueryHKDeal;
+
+	CPluginQueryHKHisOrder	m_QueryHKHisOrder;
+	CPluginQueryHKHisDeal	m_QueryHKHisDeal;
+
+	CPluginPushHKOrder		m_PushHKOrder;
+	CPluginPushHKDeal		m_PushHKDeal;
+	CPluginSubHKOrderDeal	m_SubHKOrderDeal;
 };

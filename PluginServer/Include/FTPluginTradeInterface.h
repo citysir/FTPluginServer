@@ -49,10 +49,17 @@ enum Trade_OrderStatus
 	Trade_OrderStatus_Cancelled = 6, //已撤单
 	Trade_OrderStatus_Deleted = 7, //已删除
 	Trade_OrderStatus_WaitOpen = 8, //等待开盘
+	Trade_OrderStatus_PartCancelled = 9, //部分成交剩余已撤 （从已撤单状态中分离出来的）
 	Trade_OrderStatus_LocalSent = 21, //本地已发送
 	Trade_OrderStatus_LocalFailed = 22, //本地已发送，服务器返回下单失败，没产生订单
 	Trade_OrderStatus_LocalTimeOut = 23, //本地已发送，等待服务器返回超时
 };
+
+#define IsHKOrderFinalStatus(nStatus)	(Trade_OrderStatus_AllDealt == nStatus || Trade_OrderStatus_Deleted == nStatus || \
+	 Trade_OrderStatus_PartCancelled == nStatus || Trade_OrderStatus_LocalFailed == nStatus)
+
+#define IsUSOrderFinalStatus(nStatus)    (Trade_OrderStatus_AllDealt == nStatus || Trade_OrderStatus_Failed == nStatus || Trade_OrderStatus_Cancelled == nStatus || \
+    Trade_OrderStatus_Deleted == nStatus || Trade_OrderStatus_PartCancelled == nStatus || Trade_OrderStatus_LocalFailed == nStatus)
 
 //港股的一些枚举定义
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +158,9 @@ struct Trade_DealItem
 	UINT64 nQty; //成交数量
 
 	UINT64 nTime;	//成交时间
+
+	UINT32 nContraBrokerID;		//港股特有	
+	WCHAR szContraBrokerName[128];//港股特有
 };
 
 struct Trade_AccInfo
@@ -232,7 +242,7 @@ interface ITrade_HK
 
 	* @return true发送成功，false发送失败.
 	*/
-	virtual bool PlaceOrder(Trade_Env enEnv, UINT32* pCookie, Trade_OrderType_HK enType, 
+	virtual bool PlaceOrder(Trade_Env enEnv, UINT32* pCookie, Trade_OrderType_HK enType,
 		Trade_OrderSide enSide, LPCWSTR lpszCode, UINT64 nPrice, UINT64 nQty, int* pnResult = NULL) = 0;
 
 	/**
@@ -246,6 +256,16 @@ interface ITrade_HK
 	virtual bool GetOrderStatus(Trade_Env enEnv, UINT64 nOrderID, Trade_OrderStatus& eStatus) = 0;
 
 	/**
+	* 得到订单数据
+
+	* @param enEnv 交易环境(实盘交易或仿真交易).
+	* @param nOrderID 订单真正的ID.
+	* @param orderItem 返回订单数据
+	* @return true/false 订单是否存在
+	*/
+	virtual bool GetOrderItem(Trade_Env enEnv, UINT64 nOrderID, Trade_OrderItem& orderItem) = 0;
+
+	/**
 	* 设置订单状态
 
 	* @param enEnv 交易环境(实盘交易或仿真交易).
@@ -256,7 +276,7 @@ interface ITrade_HK
 
 	* @return true发送成功，false发送失败.
 	*/
-	virtual bool SetOrderStatus(Trade_Env enEnv, UINT32* pCookie, UINT64 nOrderID, 
+	virtual bool SetOrderStatus(Trade_Env enEnv, UINT32* pCookie, UINT64 nOrderID,
 		Trade_SetOrderStatus enStatus, int* pnResult = NULL) = 0;
 
 	/**
@@ -271,7 +291,7 @@ interface ITrade_HK
 
 	* @return true发送成功，false发送失败.
 	*/
-	virtual bool ChangeOrder(Trade_Env enEnv, UINT32* pCookie, UINT64 nOrderID, UINT64 nPrice, 
+	virtual bool ChangeOrder(Trade_Env enEnv, UINT32* pCookie, UINT64 nOrderID, UINT64 nPrice,
 		UINT64 nQty, int* pnResult = NULL) = 0;
 
 	/**
@@ -302,10 +322,11 @@ interface ITrade_HK
 
 	* @param enEnv 交易环境(实盘交易或仿真交易).
 	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
-
+	* @param pszStartTime: "HH:MM:SS"格式，为NULL则默认为00:00:00
+	* @param pszEndDate: "HH:MM:SS"格式，为NULL则默认为23:59:59
 	* @return true查询成功，false查询失败.
 	*/
-	virtual bool QueryOrderList(Trade_Env enEnv, UINT32* pCookie) = 0;
+	virtual bool QueryOrderList(Trade_Env enEnv, UINT32* pCookie, LPCWSTR pszStartTime, LPCWSTR pszEndTime) = 0;
 
 	/**
 	* 查询成交记录列表
@@ -347,6 +368,55 @@ interface ITrade_HK
 	*/
 	virtual INT64 FindOrderSvrID(Trade_Env enEnv, INT64 nLocalID) = 0;
 
+	/**
+	* 得到订单相关的成交记录数据
+
+	* @param enEnv 交易环境(实盘交易或仿真交易).
+	* @param nOrderID 订单真正的ID.
+	* @param pDealItem 返回订单数组数据，为null只返回nCount
+	* @param nCount 返回订单数组大小
+	* @return true/false 成交记录是否存在
+	*/
+	virtual bool GetDealItemsByOrderID(Trade_Env enEnv, UINT64 nOrderID, Trade_DealItem** pDealItem, int &nCount) = 0;
+
+	/**
+	* 得到服务器时间戳
+
+	* @param nTimeStamp 返回服务器时间戳
+	*/
+	virtual bool GetServerTime(UINT64 &nTimeStamp) = 0;
+
+	/**
+	* 查询历史订单列表
+
+	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
+	* @param pszStartDate: "YYYY-MM-DD"格式，为NULL则默认为pszDateTo往前推90自然日
+	* @param pszEndDate: "YYYY-MM-DD"格式，为NULL则默认为当前时间
+	* @param pnResult 返回错误码, 目前可能的错误码: QueryData_FailFreqLimit
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool QueryHisOrderList(Trade_Env enEnv, UINT32* pCookie, LPCWSTR pszStartDate, LPCWSTR pszEndDate, int* pnResult = NULL) = 0;
+
+	/**
+	* 查询历史成交列表
+
+	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
+	* @param pszStartDate: "YYYY-MM-DD"格式，为NULL则默认为pszDateTo往前推90自然日
+	* @param pszEndDate: "YYYY-MM-DD"格式，为NULL则默认为当前时间
+	* @param pnResult 返回错误码, 目前可能的错误码: QueryData_FailFreqLimit
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool QueryHisDealList(Trade_Env enEnv, UINT32* pCookie, LPCWSTR pszStartDate, LPCWSTR pszEndDate, int* pnResult = NULL) = 0;
+
+	/**
+	* 获取所有订单列表
+
+	* @param enEnv 交易环境(实盘交易或仿真交易).
+	* @param parOrderID 返回所有订单ID，为null只返回nCount
+	* @param nCount 返回订单ID个数.
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool GetOrderIDList(Trade_Env enEnv, UINT64* parOrderID, int &nCount) = 0;
 };
 
 interface ITradeCallBack_HK
@@ -452,6 +522,32 @@ interface ITradeCallBack_HK
 	* @param pArrPosition 持仓数组指针.
 	*/
 	virtual void OnQueryPositionList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_PositionItem* pArrPosition) = 0;
+
+	/**
+	* 成交更新推送
+
+	* @param enEnv 交易环境(实盘交易或仿真交易).
+	* @param dealItem 成交结构体.
+	*/
+	virtual void OnDealUpdate(Trade_Env enEnv, const Trade_DealItem& dealItem) = 0;
+
+	/**
+	* 查询历史订单列表回调
+
+	* @param nCookie 请求时的Cookie.
+	* @param nCount 订单个数.
+	* @param pArrOrder 订单数组指针.
+	*/
+	virtual void OnQueryHisOrderList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder) = 0;
+
+	/**
+	* 查询成交订单列表回调
+
+	* @param nCookie 请求时的Cookie.
+	* @param nCount 成交个数.
+	* @param pArrDeal 成交数组指针.
+	*/
+	virtual void OnQueryHisDealList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal) = 0;
 };
 
 //美股交易API调用/回调接口定义
@@ -477,7 +573,7 @@ interface ITrade_US
 
 	* @return true发送成功，false发送失败.
 	*/
-	virtual bool PlaceOrder(UINT32* pCookie, Trade_OrderType_US enType, Trade_OrderSide enSide, 
+	virtual bool PlaceOrder(UINT32* pCookie, Trade_OrderType_US enType, Trade_OrderSide enSide,
 		LPCWSTR lpszCode, UINT64 nPrice, UINT64 nQty, int* pnResult = NULL) = 0;
 
 	/**
@@ -521,10 +617,11 @@ interface ITrade_US
 	* 查询订单列表
 
 	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
-
+	* @param pszStartTime: "HH:MM:SS"格式，为NULL则默认为00:00:00
+	* @param pszEndDate: "HH:MM:SS"格式，为NULL则默认为23:59:59
 	* @return true查询成功，false查询失败.
 	*/
-	virtual bool QueryOrderList(UINT32* pCookie) = 0;
+	virtual bool QueryOrderList(UINT32* pCookie, LPCWSTR pszStartTime, LPCWSTR pszEndTime) = 0;
 
 	/**
 	* 查询成交记录列表
@@ -565,17 +662,81 @@ interface ITrade_US
 	/**
 	* 得到订单状态
 
-	* @param enEnv 交易环境(实盘交易或仿真交易).
 	* @param nOrderID 订单真正的ID.
 	* @param eStatus 返回订单状态
 	* @return true/false 订单是否存在
 	*/
 	virtual bool GetOrderStatus(UINT64 nOrderID, Trade_OrderStatus& eStatus) = 0;
 
+	/**
+	* 得到订单数据
+
+	* @param nOrderID 订单真正的ID.
+	* @param orderItem 返回订单数据
+	* @return true/false 订单是否存在
+	*/
+	virtual bool GetOrderItem(UINT64 nOrderID, Trade_OrderItem& orderItem) = 0;
+
+	/**
+	* 得到订单相关的成交记录数据
+
+	* @param nOrderID 订单真正的ID.
+	* @param pDealItem 返回订单数组数据，为null只返回nCount
+	* @param nCount 返回订单数组大小
+	* @return true/false 成交记录是否存在
+	*/
+	virtual bool GetDealItemsByOrderID(UINT64 nOrderID, Trade_DealItem** pDealItem, int &nCount) = 0;
+
+	/**
+	* 得到服务器时间戳
+
+	* @param nTimeStamp 返回服务器时间戳
+	*/
+	virtual bool GetServerTime(UINT64 &nTimeStamp) = 0;
+
+	/**
+	* 查询历史订单列表
+
+	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
+	* @param pszStartDate: "YYYY-MM-DD"格式，为NULL则默认为pszDateTo往前推90自然日
+	* @param pszEndDate: "YYYY-MM-DD"格式，为NULL则默认为当前时间
+	* @param pnResult 返回错误码, 目前可能的错误码: QueryData_FailFreqLimit
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool QueryHisOrderList(UINT32* pCookie, LPCWSTR pszStartDate, LPCWSTR pszEndDate, int* pnResult = NULL) = 0;
+
+	/**
+	* 查询历史成交列表
+
+	* @param pCookie 接收本次调用对应的Cookie值，用于查询结果回调时做对应关系判断.
+	* @param pszStartDate: "YYYY-MM-DD"格式，为NULL则默认为pszDateTo往前推90自然日
+	* @param pszEndDate: "YYYY-MM-DD"格式，为NULL则默认为当前时间
+	* @param pnResult 返回错误码, 目前可能的错误码: QueryData_FailFreqLimit
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool QueryHisDealList(UINT32* pCookie, LPCWSTR pszStartDate, LPCWSTR pszEndDate, int* pnResult = NULL) = 0;
+
+	/**
+	* 获取所有订单列表
+
+	* @param parOrderID 返回所有订单ID，为null只返回nCount
+	* @param nCount 返回订单ID个数.
+	* @return true查询成功，false查询失败.
+	*/
+	virtual bool GetOrderIDList(UINT64* parOrderID, int &nCount) = 0;
 };
 
 interface ITradeCallBack_US
 {
+	/**
+	* 解锁交易请求返回
+
+	* @param nCookie 请求时的Cookie.
+	* @param enSvrRet 服务器处理结果.
+	* @param nErrCode 错误码.
+	*/
+	virtual void OnUnlockTrade(UINT32 nCookie, Trade_SvrResult enSvrRet, UINT64 nErrCode) = 0;
+
 	/**
 	* 下单请求返回
 
@@ -650,4 +811,29 @@ interface ITradeCallBack_US
 	* @param pArrPosition 持仓数组指针.
 	*/
 	virtual void OnQueryPositionList(UINT32 nCookie, INT32 nCount, const Trade_PositionItem* pArrPosition) = 0;
+
+	/**
+	* 成交更新推送
+
+	* @param dealItem 成交结构体.
+	*/
+	virtual void OnDealUpdate(const Trade_DealItem& dealItem) = 0;
+
+	/**
+	* 查询历史订单列表回调
+
+	* @param nCookie 请求时的Cookie.
+	* @param nCount 订单个数.
+	* @param pArrOrder 订单数组指针.
+	*/
+	virtual void OnQueryHisOrderList(UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder) = 0;
+
+	/**
+	* 查询历史订单列表回调
+
+	* @param nCookie 请求时的Cookie.
+	* @param nCount 订单个数.
+	* @param pArrDeal 订单数组指针.
+	*/
+	virtual void OnQueryHisDealList(UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal) = 0;
 };

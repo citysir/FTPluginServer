@@ -168,7 +168,7 @@ void CPluginExRightInfo::ReplyAllRequest()
 			
 			if ( parItem[n].split_base != 0 )
 			{
-				AckItem.split_ratio = INT32((parItem[n].split_ert / parItem[n].split_base) * c_priceMultiply);//拆合股比例
+				AckItem.split_ratio = INT32((parItem[n].split_ert / (double)parItem[n].split_base) * c_priceMultiply);//拆合股比例
 			}
 			else
 			{
@@ -177,7 +177,7 @@ void CPluginExRightInfo::ReplyAllRequest()
 			
 			if ( parItem[n].dividend_base != 0)
 			{
-				AckItem.per_cash_div = INT64((parItem[n].dividend_amount / parItem[n].dividend_base) * c_priceMultiply);//现金分红
+				AckItem.per_cash_div = INT64((parItem[n].dividend_amount / (double)parItem[n].dividend_base) * c_priceMultiply);//现金分红
 			}
 			else
 			{
@@ -186,7 +186,7 @@ void CPluginExRightInfo::ReplyAllRequest()
 
 			if ( parItem[n].bonus_stk_base != 0 )
 			{
-				AckItem.per_share_ratio = INT32((parItem[n].bonus_stk_ert / parItem[n].bonus_stk_base) * c_priceMultiply);//送股比例
+				AckItem.per_share_ratio = INT32((parItem[n].bonus_stk_ert / (double)parItem[n].bonus_stk_base) * c_priceMultiply);//送股比例
 			}
 			else
 			{
@@ -195,7 +195,7 @@ void CPluginExRightInfo::ReplyAllRequest()
 			
 			if ( parItem[n].into_shr_base != 0)
 			{
-				AckItem.per_share_trans_ratio = INT32((parItem[n].into_ert / parItem[n].into_shr_base) * c_priceMultiply);//转赠股比例
+				AckItem.per_share_trans_ratio = INT32((parItem[n].into_ert / (double)parItem[n].into_shr_base) * c_priceMultiply);//转赠股比例
 			}
 			else
 			{
@@ -204,7 +204,7 @@ void CPluginExRightInfo::ReplyAllRequest()
 			
 			if ( parItem[n].allot_base != 0 )
 			{
-				AckItem.allotment_ratio = INT32((parItem[n].allot_ert / parItem[n].allot_base) * c_priceMultiply);//配股比例
+				AckItem.allotment_ratio = INT32((parItem[n].allot_ert / (double)parItem[n].allot_base) * c_priceMultiply);//配股比例
 			}
 			else
 			{
@@ -213,19 +213,19 @@ void CPluginExRightInfo::ReplyAllRequest()
 			
 			if ( parItem[n].stk_add_base != 0 )
 			{
-				AckItem.stk_spo_ratio = INT32((parItem[n].stk_add_ert / parItem[n].stk_add_base) * c_priceMultiply);//增发比例
+				AckItem.stk_spo_ratio = INT32((parItem[n].stk_add_ert / (double)parItem[n].stk_add_base) * c_priceMultiply);//增发比例
 			}
 			else
 			{
 				AckItem.stk_spo_ratio = 0;
 			}
 
-			AckItem.allotment_price = INT64(parItem[n].allot_price * c_priceMultiply);//配股价格
-			AckItem.stk_spo_price = INT64(parItem[n].stk_add_price * c_priceMultiply);//增发价格
-			AckItem.fwd_factor_a = INT64(parItem[n].fwd_factor_a * c_priceMultiply);
-			AckItem.fwd_factor_b = INT64(parItem[n].fwd_factor_b * c_priceMultiply);
-			AckItem.bwd_factor_a = INT64(parItem[n].bwd_factor_a * c_priceMultiply);
-			AckItem.bwd_factor_b = INT64(parItem[n].bwd_factor_b * c_priceMultiply);
+			AckItem.allotment_price = INT64(round(parItem[n].allot_price * c_priceMultiply));//配股价格
+			AckItem.stk_spo_price = INT64(round(parItem[n].stk_add_price * c_priceMultiply));//增发价格
+			AckItem.fwd_factor_a = INT64(round(parItem[n].fwd_factor_a * c_priceMultiply));
+			AckItem.fwd_factor_b = INT64(round(parItem[n].fwd_factor_b * c_priceMultiply));
+			AckItem.bwd_factor_a = INT64(round(parItem[n].bwd_factor_a * c_priceMultiply));
+			AckItem.bwd_factor_b = INT64(round(parItem[n].bwd_factor_b * c_priceMultiply));
 			ackBody.vtAckExRightInfo.push_back(AckItem);
 		}	
 		

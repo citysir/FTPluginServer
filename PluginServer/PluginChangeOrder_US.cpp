@@ -150,6 +150,28 @@ void  CPluginChangeOrder_US::DoTryProcessTradeOpt(StockDataReq* pReq)
 			}
 		} 
 	} 
+
+	//减少不必要的请求， 避免超过无意义的超过调用频率
+	QueryDataErrCode eErrCode = QueryData_Suc;
+	if (IsNewStateNotNeedReq((Trade_Env)body.nEnvType, body.nSvrOrderID, eErrCode))
+	{
+		TradeAckType ack;
+		ack.head = req.head;
+		ack.head.ddwErrCode = UtilPlugin::ConvertErrCode(eErrCode);
+		ack.head.strErrDesc = UtilPlugin::GetErrStrByCode(eErrCode);
+
+		ack.body.nEnvType = body.nEnvType;
+		ack.body.nCookie = body.nCookie;
+		ack.body.nLocalOrderID = body.nLocalOrderID;
+		ack.body.nSvrOrderID = body.nSvrOrderID;
+		ack.body.nSvrResult = Trade_SvrResult_Succeed;
+		HandleTradeAck(&ack, sock);
+
+		//清除req对象 
+		DoRemoveReqData(pReq);
+		return;
+	}
+
 	// 
 	bool bRet = false;
 	int nReqResult = 0;
@@ -434,4 +456,45 @@ void CPluginChangeOrder_US::DoClearReqInfo(SOCKET socket)
 			++itReq;
 		}
 	}
+}
+
+bool CPluginChangeOrder_US::IsNewStateNotNeedReq(Trade_Env eEnv, INT64 nSvrOrderID, QueryDataErrCode& eErrCode)
+{
+	eErrCode = QueryData_Suc;
+	if (0 == nSvrOrderID || eEnv != Trade_Env_Real)
+	{
+		eErrCode = QueryData_FailErrParam;
+		return false;
+	}
+	Trade_OrderStatus eCurStatus = Trade_OrderStatus_Processing;
+	if (!m_pTradeOp->GetOrderStatus(nSvrOrderID, eCurStatus))
+	{
+		eErrCode = QueryData_FailErrParam;
+		return false;
+	}
+
+	bool bRet = false;
+	switch (eCurStatus)
+	{
+	case Trade_OrderStatus_Processing:
+	case Trade_OrderStatus_Failed:
+	case Trade_OrderStatus_Cancelled:
+	case Trade_OrderStatus_Deleted:
+		bRet = true;
+		eErrCode = QueryData_FailErrNotPermit;
+		break;
+	case Trade_OrderStatus_WaitDeal:
+	case Trade_OrderStatus_PartDealt:
+	case Trade_OrderStatus_AllDealt:
+	case Trade_OrderStatus_Disabled:
+	case Trade_OrderStatus_WaitOpen:
+	case Trade_OrderStatus_LocalSent:
+	case Trade_OrderStatus_LocalFailed:
+	case Trade_OrderStatus_LocalTimeOut:
+		break;
+	default:
+		CHECK_OP(false, NOOP);
+		break;
+	}
+	return bRet;
 }

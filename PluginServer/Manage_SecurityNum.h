@@ -16,6 +16,7 @@ public:
 	void DeleteCookieSocket(const UINT32 &nCookie);
 	bool IsSafeSocket(const SOCKET &sock);
 	void AddSafeSocket(const UINT32 &nCookie);
+	bool GetSocketByCookie(UINT32 nCookie, SOCKET &sock);
 
 private:
 	//OMCriticalSection m_safe;

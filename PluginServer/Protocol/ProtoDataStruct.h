@@ -33,6 +33,7 @@ enum
 	PROTO_ID_PUSH_TICKER			= 1033,  //推送逐笔
 	PROTO_ID_PUSH_RTDATA			= 1034,  //推送分时
 	PROTO_ID_PUSH_BROKER_QUEUE		= 1035,	 //推送经纪队列
+	PROTO_ID_PUSH_HEART_BEAT		= 1036,	 //心跳
 
 	PROTO_ID_QUOTE_MAX				= 1999,  
 
@@ -45,7 +46,15 @@ enum
 	PROTO_ID_TDHK_QUERY_ORDER		= 6008,	  //查询港股订单列表
 	PROTO_ID_TDHK_QUERY_POSITION	= 6009,	  //查询港股持仓
 	PROTO_ID_TDHK_QUERY_DEAL		= 6010,	  //查询港股成交记录
-	PROTO_ID_TRADE_HK_MAX			= 6999,    
+	PROTO_ID_TDHK_QUERY_HIS_ORDER	= 6011,	  //查询港股历史订单
+	PROTO_ID_TDHK_QUERY_HIS_DEAL	= 6012,	  //查询港股历史成交记录
+
+	PROTO_ID_TDHK_SUB_ORDER_DEAL	= 6100,	  //订阅港股订单,成交推送
+
+	PROTO_ID_TDHK_PUSH_ORDER		= 6200,	  //推送港股订单变化
+	PROTO_ID_TDHK_PUSH_DEAL			= 6201,   //推送港股成交变化
+
+	PROTO_ID_TRADE_HK_MAX			= 6999,
 
 	PROTO_ID_TRADE_US_MIN           = 7003,
 	PROTO_ID_TDUS_PLACE_ORDER		= 7003,   //下单
@@ -56,8 +65,15 @@ enum
 	PROTO_ID_TDUS_QUERY_ORDER		= 7008,	  //查询美股订单列表
 	PROTO_ID_TDUS_QUERY_POSITION	= 7009,	  //查询美股持仓
 	PROTO_ID_TDUS_QUERY_DEAL		= 7010,	  //查询美股成交列表
-	PROTO_ID_TRADE_US_MAX			= 7999,    
+	PROTO_ID_TDUS_QUERY_HIS_ORDER	= 7011,	  //查询美股历史订单
+	PROTO_ID_TDUS_QUERY_HIS_DEAL	= 7012,	  //查询美股历史成交记录
 
+	PROTO_ID_TDUS_SUB_ORDER_DEAL	= 7100,	  //订阅美股订单,成交推送
+
+	PROTO_ID_TDUS_PUSH_ORDER		= 7200,	  //推送美股订单变化
+	PROTO_ID_TDUS_PUSH_DEAL			= 7201,   //推送美股成交变化
+
+	PROTO_ID_TRADE_US_MAX			= 7999,
 };
 
 #define KEY_REQ_PARAM	"ReqParam"
@@ -82,6 +98,10 @@ enum ProtoErrCode
 	PROTO_ERR_SERVER_BUSY	= 501,
 	PROTO_ERR_SERVER_TIMEROUT = 502,
 	PROTO_ERR_NETWORK = 503,
+
+	PROTO_ERR_NOT_PERMIT = 504,//请求操作不允许, 如正在处理中的订单不允许改单、撤单 
+
+	PROTO_ERR_ORDER_NOT_FIND = 505,//未知订单
 };
 
 //////////////////////////////////////////////////////////////////////////

@@ -87,6 +87,7 @@ void CPluginModule::Uninit()
 		m_pPluginCore = NULL;
 		m_QuoteServer.UninitQuoteSvr();
 		m_HKTradeServer.UninitTradeSvr();
+		m_USTradeServer.UninitTradeSvr();
 
 		m_Network.UninitNetwork();		
 		m_MsgHandler.Close();
@@ -248,6 +249,10 @@ void CPluginModule::ParseRecvData(SOCKET sock, char *pBuf, int nBufLen)
 
 	Json::Value jsnVal;
 	bool bRet = CProtoParseBase::ConvBuffer2Json(pBuf, nBufLen, jsnVal);
+	if (!bRet)
+	{
+		theLog << "CPluginModule::ParseRecvData Error : " << " bufLen=" << nBufLen << " Str=" << pBuf << endLog;
+	}
 	CHECK_RET(bRet, NORET);
 
 	int nCmdID = CProtoParseBase::GetProtoID(jsnVal);

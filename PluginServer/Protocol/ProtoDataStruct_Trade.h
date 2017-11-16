@@ -1,57 +1,8 @@
 #pragma once
 #include <vector>
+#include <set>
+#include <map>
 #include "ProtoDataStruct.h"
-
-//////////////////////////////////////////////////////////////////////////
-//推送港股订单实时信息, PROTO_ID_TDHK_PUSH_ORDER_UPDATE
-struct	OrderUpdatePushHKReqBody
-{
-};
-
-struct OrderUpdatePushHKAckBody
-{
-	int nEnvType;
-	INT64 nLocalID;
-	INT64 nOrderID;
-	int   nOrderDir;
-	int	  nOrderTypeHK;
-	int   nOrderStatusHK;	
-	int   nPrice;
-	INT64 nQTY;
-	INT64 nDealQTY;
-	int   nSubmitTime;
-	int   nUpdateTime;
-	std::string strStockName;
-	std::string strStockCode;
-	OrderUpdatePushHKAckBody()
-	{
-		nEnvType = 0;
-		nLocalID = 0;
-		nOrderID = 0;
-		nOrderDir = 0;
-		nOrderTypeHK = 0;
-		nOrderStatusHK = 0;
-		nPrice = 0;
-		nQTY = 0;
-		nDealQTY = 0;
-		nSubmitTime = 0;
-		nUpdateTime = 0;
-	}
-};
-
-struct	OrderUpdatePushHK_Req
-{
-	ProtoHead					head;
-	OrderUpdatePushHKReqBody	body;
-};
-
-struct	OrderUpdatePushHK_Ack
-{
-	ProtoHead					head;
-	OrderUpdatePushHKAckBody	body;
-};
-
-
 
 //////////////////////////////////////////////////////////////////////////
 //推送港股订单错误信息, PROTO_ID_TDHK_PUSH_ORDER_ERROR
@@ -120,6 +71,21 @@ struct PlaceOrderAckBody
 	int nSvrResult;	
 	INT64	nSvrOrderID;
 
+	int nOrderType; //不同市场、取值对应具体的枚举定义 Trade_OrderType_HK 或 Trade_OrderType_US
+	int enSide; //Trade_OrderSide
+	int nStatus; //取值对应具体的枚举定义Trade_OrderStatus
+	std::wstring strStockCode;
+	std::wstring strStockName;
+	INT64 nPrice;
+	INT64 nQty;
+	INT64 nDealtQty; //成交数量
+	int nDealtAvgPrice;
+
+	INT64 nSubmitedTime; //服务器收到的订单提交时间
+	INT64 nUpdatedTime; //订单最后更新的时间
+
+	int   nErrCode; //错误码，仅支持港股
+
 	PlaceOrderAckBody()
 	{
 		nEnvType = 0;
@@ -127,6 +93,17 @@ struct PlaceOrderAckBody
 		nLocalID = 0;
 		nSvrResult = 0;
 		nSvrOrderID = 0;
+
+		nOrderType = 0;
+		enSide = 0;
+		nStatus = 0;
+		nPrice = 0;
+		nQty = 0;
+		nDealtQty = 0;
+		nDealtAvgPrice = 0;
+		nSubmitedTime = 0;
+		nUpdatedTime = 0;
+		nErrCode = 0;
 	}
 };
 
@@ -282,7 +259,7 @@ struct	ChangeOrder_Req
 
 struct	ChangeOrder_Ack
 {
-	ProtoHead				head;
+	ProtoHead			head;
 	ChangeOrderAckBody	body;
 };
 
@@ -339,13 +316,13 @@ struct QueryHKAccInfoAckBody
 
 struct	QueryHKAccInfo_Req
 {
-	ProtoHead			head;
+	ProtoHead				head;
 	QueryHKAccInfoReqBody	body;
 };
 
 struct	QueryHKAccInfo_Ack
 {
-	ProtoHead			head;
+	ProtoHead				head;
 	QueryHKAccInfoAckBody	body;
 };
 
@@ -404,16 +381,15 @@ struct QueryUSAccInfoAckBody
 
 struct	QueryUSAccInfo_Req
 {
-	ProtoHead			head;
+	ProtoHead				head;
 	QueryUSAccInfoReqBody	body;
 };
 
 struct	QueryUSAccInfo_Ack
 {
-	ProtoHead			head;
+	ProtoHead				head;
 	QueryUSAccInfoAckBody	body;
 };
-
 
 //////////////////////////////////////////////////////////////////////////
 //查询所有港股订单
@@ -421,12 +397,17 @@ struct	QueryHKOrderReqBody
 {
 	int		nEnvType;
 	int		nCookie;
+	INT64	nOrderID;
 	std::string strStatusFilter; //状态过滤字符串， 以","号分隔，如"0,1,2"
+	std::string strStockCode;
+	std::string strStartTime;
+	std::string strEndTime;
 
 	QueryHKOrderReqBody()
 	{
 		nEnvType = 0;
 		nCookie = 0;
+		nOrderID = 0;
 	}
 };
 
@@ -444,7 +425,7 @@ struct QueryHKOrderAckItem
 	INT64 nPrice;
 	INT64 nQty;
 	INT64 nDealtQty; //成交数量
-	int nDealtAvgPrice; //成交均价，没有放大
+	int nDealtAvgPrice; 
 
 	INT64 nSubmitedTime; //服务器收到的订单提交时间
 	INT64 nUpdatedTime; //订单最后更新的时间
@@ -503,12 +484,17 @@ struct	QueryUSOrderReqBody
 {
 	int		nEnvType;
 	int		nCookie;
+	INT64	nOrderID;
 	std::string strStatusFilter; //状态过滤字符串， 以","号分隔，如"0,1,2"
+	std::string strStockCode;
+	std::string strStartTime;
+	std::string strEndTime;
 
 	QueryUSOrderReqBody()
 	{
 		nEnvType = 0;
 		nCookie = 0;
+		nOrderID = 0;
 	}
 };
 
@@ -519,19 +505,19 @@ struct QueryUSOrderAckItem
 	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
 
 	int nOrderType; //不同市场、取值对应具体的枚举定义 Trade_OrderType_US 或 Trade_OrderType_US
-	int/*Trade_OrderSide*/ enSide;
+	int enSide; //Trade_OrderSide
 	int nStatus; //取值对应具体的枚举定义Trade_OrderStatus
 	std::wstring strStockCode;
 	std::wstring strStockName;	
 	INT64 nPrice;
 	INT64 nQty;
 	INT64 nDealtQty; //成交数量
-	int   nDealtAvgPrice; //成交均价，没有放大
+	int   nDealtAvgPrice; 
 
 	INT64 nSubmitedTime; //服务器收到的订单提交时间
 	INT64 nUpdatedTime; //订单最后更新的时间
 
-	int   nErrCode; //错误码，仅支持美股
+	int   nErrCode; 
 
 	QueryUSOrderAckItem()
 	{
@@ -579,13 +565,16 @@ struct	QueryUSOrder_Ack
 	QueryUSOrderAckBody	body;
 };
 
-
 //////////////////////////////////////////////////////////////////////////
-//查询订单列表
+//查询持仓列表
 struct	QueryPositionReqBody
 {
 	int		nEnvType;
 	int		nCookie;
+	std::string strStockType;
+	std::string strStockCode;
+	std::string strPLRatioMin;
+	std::string strPLRatioMax;
 
 	QueryPositionReqBody()
 	{
@@ -666,6 +655,7 @@ struct QueryPosition_Ack
 	ProtoHead				head;
 	QueryPositionAckBody	body;
 };
+
 //////////////////////////////////////////////////////////////////////////
 //查询所有港股成交记录
 struct QueryHKDealReqBody
@@ -686,17 +676,20 @@ struct QueryHKDealAckItem
 	//特别提醒！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	//交易API中价格、金额类的数据若为浮点型，即是原始数据没有被放大；若是整型，则是浮点值×1000，即最小单位是0.001元
 
-	UINT64 nOrderID; //订单号，服务器产生的订单真正的ID
-	UINT64 nDealID; //成交号
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	INT64 nDealID; //成交号
 
 	int enSide; //方向
 
 	std::wstring strStockCode;
 	std::wstring strStockName;	
-	UINT64 nPrice; //成交价格
-	UINT64 nQty; //成交数量
+	INT64 nPrice; //成交价格
+	INT64 nQty; //成交数量
 
-	UINT64 nTime;	//成交时间
+	INT64 nTime;	//成交时间
+
+	int	nContraBrokerID;
+	std::wstring strContraBrokerName;
 
 	QueryHKDealAckItem()
 	{
@@ -707,6 +700,8 @@ struct QueryHKDealAckItem
 		nPrice = 0;
 		nQty = 0;
 		nTime = 0;
+
+		nContraBrokerID = 0;
 	}
 };
 
@@ -757,19 +752,21 @@ struct QueryUSDealAckItem
 	//特别提醒！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	//交易API中价格、金额类的数据若为浮点型，即是原始数据没有被放大；若是整型，则是浮点值×1000，即最小单位是0.001元
 
-	UINT64 nOrderID; //订单号，服务器产生的订单真正的ID
-	UINT64 nDealID; //成交号
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	INT64 nDealID; //成交号
 
 	int enSide; //方向
 
 	std::wstring strStockCode;
 	std::wstring strStockName;	
 
-	UINT64 nPrice; //成交价格
-	UINT64 nQty; //成交数量
+	INT64 nPrice; //成交价格
+	INT64 nQty; //成交数量
 
-	UINT64 nTime;	//成交时间
+	INT64 nTime;	//成交时间
 
+	int	nContraBrokerID;
+	std::wstring strContraBrokerName;
 	QueryUSDealAckItem()
 	{
 		nOrderID = 0;
@@ -781,6 +778,8 @@ struct QueryUSDealAckItem
 		nQty = 0;
 
 		nTime = 0;
+
+		nContraBrokerID = 0;
 	}
 };
 
@@ -811,6 +810,608 @@ struct QueryUSDeal_Ack
 	QueryUSDealAckBody	body;
 };
 
+//////////////////////////////////////////////////////////////////////////
+//订阅港股股订单，成交推送
+struct SubHKOrderDealReqBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strOrderID;
+	int		nSubOrder;
+	int		nSubDeal;
+	int		nFirstPush;
+	SubHKOrderDealReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+		nSubOrder = 0;
+		nSubDeal = 0;
+	}
+};
+
+struct SubHKOrderDealAckBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strOrderID;
+	std::string strSubOrderSuc;
+	std::string strSubDealSuc;
+	SubHKOrderDealAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct SubHKOrderDeal_Req
+{
+	ProtoHead				head;
+	SubHKOrderDealReqBody	body;
+};
+
+struct SubHKOrderDeal_Ack
+{
+	ProtoHead				head;
+	SubHKOrderDealAckBody	body;
+};
+
+struct PushHKOrderReqBody
+{
+};
+
+typedef QueryHKOrderAckItem	PushHKOrderAckItem;
+
+struct PushHKOrderAckBody
+{
+	int	nEnvType;
+	PushHKOrderAckItem HKOrderItem;
+
+	PushHKOrderAckBody()
+	{
+		nEnvType = 0;
+	}
+
+	bool Equal(const PushHKOrderAckBody& AckBody)
+	{
+		bool bEqual = (nEnvType == AckBody.nEnvType);
+		bEqual &= (HKOrderItem.nOrderID == AckBody.HKOrderItem.nOrderID);
+		bEqual &= (HKOrderItem.nOrderType == AckBody.HKOrderItem.nOrderType);
+		bEqual &= (HKOrderItem.nStatus == AckBody.HKOrderItem.nStatus);
+		bEqual &= (HKOrderItem.nPrice == AckBody.HKOrderItem.nPrice);
+		bEqual &= (HKOrderItem.nQty == AckBody.HKOrderItem.nQty);
+		bEqual &= (HKOrderItem.nDealtQty == AckBody.HKOrderItem.nDealtQty);
+		bEqual &= (HKOrderItem.nDealtAvgPrice == AckBody.HKOrderItem.nDealtAvgPrice);
+		bEqual &= (HKOrderItem.nSubmitedTime == AckBody.HKOrderItem.nSubmitedTime);
+		bEqual &= (HKOrderItem.nUpdatedTime == AckBody.HKOrderItem.nUpdatedTime);
+		bEqual &= (HKOrderItem.nErrCode == AckBody.HKOrderItem.nErrCode);
+		bEqual &= (HKOrderItem.strStockCode == AckBody.HKOrderItem.strStockCode);
+		bEqual &= (HKOrderItem.strStockName == AckBody.HKOrderItem.strStockName);
+		return bEqual;
+	}
+};
+
+struct PushHKOrder_Req
+{
+	ProtoHead			head;
+	PushHKOrderReqBody	body;
+};
+
+struct PushHKOrder_Ack
+{
+	ProtoHead			head;
+	PushHKOrderAckBody	body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//订阅美股订单，成交推送
+struct SubUSOrderDealReqBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strOrderID;
+	int		nSubOrder;
+	int		nSubDeal;
+	int		nFirstPush;
+	SubUSOrderDealReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+		nSubOrder = 0;
+		nSubDeal = 0;
+	}
+};
+
+struct SubUSOrderDealAckBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strOrderID;
+	std::string strSubOrderSuc;
+	std::string strSubDealSuc;
+
+	SubUSOrderDealAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct SubUSOrderDeal_Req
+{
+	ProtoHead				head;
+	SubUSOrderDealReqBody	body;
+};
+
+struct SubUSOrderDeal_Ack
+{
+	ProtoHead				head;
+	SubUSOrderDealAckBody	body;
+};
+
+struct PushUSOrderReqBody
+{
+	PushUSOrderReqBody()
+	{
+	}
+};
+
+typedef QueryUSOrderAckItem	PushUSOrderAckItem;
+
+struct PushUSOrderAckBody
+{
+	int	nEnvType;
+	PushUSOrderAckItem USOrderItem;
+
+	PushUSOrderAckBody()
+	{
+		nEnvType = 0;
+	}
+
+	bool Equal(const PushUSOrderAckBody& AckBody)
+	{
+		bool bEqual = (nEnvType == AckBody.nEnvType);
+		bEqual &= (USOrderItem.nOrderID == AckBody.USOrderItem.nOrderID);
+		bEqual &= (USOrderItem.nOrderType == AckBody.USOrderItem.nOrderType);
+		bEqual &= (USOrderItem.nStatus == AckBody.USOrderItem.nStatus);
+		bEqual &= (USOrderItem.nPrice == AckBody.USOrderItem.nPrice);
+		bEqual &= (USOrderItem.nQty == AckBody.USOrderItem.nQty);
+		bEqual &= (USOrderItem.nDealtQty == AckBody.USOrderItem.nDealtQty);
+		bEqual &= (USOrderItem.nDealtAvgPrice == AckBody.USOrderItem.nDealtAvgPrice);
+		bEqual &= (USOrderItem.nSubmitedTime == AckBody.USOrderItem.nSubmitedTime);
+		bEqual &= (USOrderItem.nUpdatedTime == AckBody.USOrderItem.nUpdatedTime);
+		bEqual &= (USOrderItem.strStockCode == AckBody.USOrderItem.strStockCode);
+		bEqual &= (USOrderItem.strStockName == AckBody.USOrderItem.strStockName);
+		return bEqual;
+	}
+};
+
+struct PushUSOrder_Req
+{
+	ProtoHead			head;
+	PushUSOrderReqBody	body;
+};
+
+struct PushUSOrder_Ack
+{
+	ProtoHead			head;
+	PushUSOrderAckBody	body;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+//查询历史港股订单
+struct QueryHKHisOrderReqBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strStatusFilter; //状态过滤字符串， 以","号分隔，如"0,1,2"
+	std::string strStockCode;
+	std::string strStartDate;
+	std::string strEndDate;
+
+	QueryHKHisOrderReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryHKHisOrderAckItem
+{
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	int nOrderType; //不同市场、取值对应具体的枚举定义 Trade_OrderType_HK 或 Trade_OrderType_US
+	int enSide;/*Trade_OrderSide*/
+	int nStatus; //取值对应具体的枚举定义Trade_OrderStatus
+	std::wstring strStockCode;
+	std::wstring strStockName;
+	INT64 nPrice;
+	INT64 nQty;
+	INT64 nDealtQty; //成交数量
+	INT64 nSubmitedTime; //服务器收到的订单提交时间
+	INT64 nUpdatedTime; //订单最后更新的时间
+	int   nErrCode; //错误码，仅支持港股
+
+	QueryHKHisOrderAckItem()
+	{
+		nOrderID = 0;
+		nOrderType = 0;
+		nStatus = 0;
+		nPrice = 0;
+		nQty = 0;
+		nDealtQty = 0;
+		nSubmitedTime = 0;
+		nUpdatedTime = 0;
+		nErrCode = 0;
+	}
+};
+
+typedef std::vector<QueryHKHisOrderAckItem>	VT_HK_HIS_ORDER;
+
+struct QueryHKHisOrderAckBody
+{
+	int		nEnvType;
+	int		nCookie;
+	VT_HK_HIS_ORDER vtHisOrder;//注意历史订单没有成交均价字段
+
+	QueryHKHisOrderAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryHKHisOrder_Req
+{
+	ProtoHead				head;
+	QueryHKHisOrderReqBody	body;
+};
+
+struct QueryHKHisOrder_Ack
+{
+	ProtoHead				head;
+	QueryHKHisOrderAckBody	body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//查询历史美股订单
+struct QueryUSHisOrderReqBody
+{
+	int		nEnvType;
+	int		nCookie;
+	std::string strStatusFilter; //状态过滤字符串， 以","号分隔，如"0,1,2"
+	std::string strStockCode;
+	std::string strStartDate;
+	std::string strEndDate;
+
+	QueryUSHisOrderReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryUSHisOrderAckItem
+{
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	int nOrderType; //不同市场、取值对应具体的枚举定义 Trade_OrderType_US 或 Trade_OrderType_US
+	int enSide; //Trade_OrderSide
+	int nStatus; //取值对应具体的枚举定义Trade_OrderStatus
+	std::wstring strStockCode;
+	std::wstring strStockName;
+	INT64 nPrice;
+	INT64 nQty;
+	INT64 nDealtQty; //成交数量
+	int   nDealtAvgPrice;
+	INT64 nSubmitedTime; //服务器收到的订单提交时间
+	INT64 nUpdatedTime; //订单最后更新的时间
+
+	QueryUSHisOrderAckItem()
+	{
+		nOrderID = 0;
+		nOrderType = 0;
+		nStatus = 0;
+		nPrice = 0;
+		nQty = 0;
+		nDealtQty = 0;
+		nSubmitedTime = 0;
+		nUpdatedTime = 0;
+	}
+};
+
+typedef std::vector<QueryUSHisOrderAckItem>	VT_US_HIS_ORDER;
+
+struct QueryUSHisOrderAckBody
+{
+	int		nEnvType;
+	int		nCookie;
+	VT_US_HIS_ORDER vtHisOrder;//注意历史订单没有成交均价字段
+
+	QueryUSHisOrderAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryUSHisOrder_Req
+{
+	ProtoHead				head;
+	QueryUSHisOrderReqBody	body;
+};
+
+struct QueryUSHisOrder_Ack
+{
+	ProtoHead				head;
+	QueryUSHisOrderAckBody	body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//港股股成交推送
+struct PushHKDealReqBody
+{
+};
+
+struct PushHKDealAckBody
+{
+	int	nEnvType;
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	INT64 nDealID; //成交号
+
+	int enSide; //方向
+	std::wstring strStockCode;
+	std::wstring strStockName;
+
+	INT64 nPrice; //成交价格
+	INT64 nQty; //成交数量
+	INT64 nTime;	//成交时间
+
+	int	nContraBrokerID;
+	std::wstring strContraBrokerName;
+
+	PushHKDealAckBody()
+	{
+		nEnvType = 0;
+		nOrderID = 0;
+		nDealID = 0;
+		enSide = 0;
+		nPrice = 0;
+		nQty = 0;
+		nTime = 0;
+		nContraBrokerID = 0;
+	}
+	bool Equal(const PushHKDealAckBody &AckBody)
+	{
+		bool bEqual = (nEnvType == AckBody.nEnvType);
+		bEqual &= (nOrderID == AckBody.nOrderID);
+		bEqual &= (nDealID == AckBody.nDealID);
+		bEqual &= (enSide == AckBody.enSide);
+		bEqual &= (strStockCode == AckBody.strStockCode);
+		bEqual &= (strStockName == AckBody.strStockName);
+		bEqual &= (nPrice == AckBody.nPrice);
+		bEqual &= (nQty == AckBody.nQty);
+		bEqual &= (nTime == AckBody.nTime);
+		bEqual &= (nContraBrokerID == AckBody.nContraBrokerID);
+		bEqual &= (strContraBrokerName == AckBody.strContraBrokerName);
+		return bEqual;
+	}
+};
+
+struct PushHKDeal_Req
+{
+	ProtoHead			head;
+	PushHKDealReqBody	body;
+};
+
+struct PushHKDeal_Ack
+{
+	ProtoHead			head;
+	PushHKDealAckBody	body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//美股成交推送
+struct PushUSDealReqBody
+{
+};
+
+struct PushUSDealAckBody
+{
+	int	nEnvType;
+	INT64 nOrderID; //订单号，服务器产生的订单真正的ID
+	INT64 nDealID; //成交号
+
+	int enSide; //方向
+
+	std::wstring strStockCode;
+	std::wstring strStockName;
+
+	INT64 nPrice; //成交价格
+	INT64 nQty; //成交数量
+
+	INT64 nTime;	//成交时间
+
+	PushUSDealAckBody()
+	{
+		nEnvType = 0;
+		nOrderID = 0;
+		nDealID = 0;
+		enSide = 0;
+		nPrice = 0;
+		nQty = 0;
+		nTime = 0;
+	}
+
+	bool Equal(const PushUSDealAckBody &AckBody)
+	{
+		bool bEqual = (nEnvType == AckBody.nEnvType);
+		bEqual &= (nOrderID == AckBody.nOrderID);
+		bEqual &= (nDealID == AckBody.nDealID);
+		bEqual &= (enSide == AckBody.enSide);
+		bEqual &= (strStockCode == AckBody.strStockCode);
+		bEqual &= (strStockName == AckBody.strStockName);
+		bEqual &= (nPrice == AckBody.nPrice);
+		bEqual &= (nQty == AckBody.nQty);
+		bEqual &= (nTime == AckBody.nTime);
+		return bEqual;
+	}
+};
+
+struct PushUSDeal_Req
+{
+	ProtoHead			head;
+	PushUSDealReqBody	body;
+};
+
+struct PushUSDeal_Ack
+{
+	ProtoHead			head;
+	PushUSDealAckBody	body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+struct QueryHKHisDealReqBody
+{
+	int nEnvType;
+	int nCookie;
+	std::string strStockCode;
+	std::string strStartDate;
+	std::string strEndDate;
+	QueryHKHisDealReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryHKHisDealAckItem
+{
+	INT64 nOrderID;
+	INT64 nDealID;
+
+	int enSide;
+	std::wstring strStockCode;
+	std::wstring strStockName;
+	INT64 nPrice;
+	INT64 nQty;
+
+	INT64 nTime;
+
+	int nContraBrokerID;
+	std::wstring strContraBrokerName;
+
+	QueryHKHisDealAckItem()
+	{
+		nOrderID = 0;
+		nDealID = 0;
+
+		enSide = 0;
+		nPrice = 0;
+		nQty = 0;
+		nTime = 0;
+
+		nContraBrokerID = 0;
+	}
+};
+
+typedef std::vector<QueryHKHisDealAckItem>    VT_HK_HisDeal;
+
+struct QueryHKHisDealAckBody
+{
+	int nEnvType;
+	int nCookie;
+	VT_HK_HisDeal vtHisDeal;
+
+	QueryHKHisDealAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryHKHisDeal_Req
+{
+	ProtoHead				head;
+	QueryHKHisDealReqBody   body;
+};
+
+struct QueryHKHisDeal_Ack
+{
+	ProtoHead				head;
+	QueryHKHisDealAckBody   body;
+};
+
+//////////////////////////////////////////////////////////////////////////
+struct QueryUSHisDealReqBody
+{
+	int nEnvType;
+	int nCookie;
+	std::string strStockCode;
+	std::string strStartDate;
+	std::string strEndDate;
+	QueryUSHisDealReqBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryUSHisDealAckItem
+{
+	INT64 nOrderID; 
+	INT64 nDealID; 
+
+	int enSide; 
+
+	std::wstring strStockCode;
+	std::wstring strStockName;
+
+	INT64 nPrice; 
+	INT64 nQty; 
+
+	INT64 nTime;
+
+	QueryUSHisDealAckItem()
+	{
+		nOrderID = 0;
+		nDealID = 0;
+
+		enSide = 0;
+
+		nPrice = 0;
+		nQty = 0;
+
+		nTime = 0;
+	}
+};
+
+typedef std::vector<QueryUSHisDealAckItem>    VT_US_HisDeal;
+
+struct QueryUSHisDealAckBody
+{
+	int        nEnvType;
+	int        nCookie;
+	VT_US_HisDeal vtHisDeal;
+
+	QueryUSHisDealAckBody()
+	{
+		nEnvType = 0;
+		nCookie = 0;
+	}
+};
+
+struct QueryUSHisDeal_Req
+{
+	ProtoHead				head;
+	QueryUSHisDealReqBody   body;
+};
+
+struct QueryUSHisDeal_Ack
+{
+	ProtoHead				head;
+	QueryUSHisDealAckBody   body;
+};
+
+///////////////////////////////////////////////////////////////////////////
 //验证
 struct CheckSecNumReqBody
 {

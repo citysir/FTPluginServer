@@ -117,8 +117,8 @@ interface IFTQuoteData
 
 	/**
 	* 得到交易日列表
-	* @pszDateFrom: "YYYYMMDD"格式，为NULL则默认为pszDateTo往前推一年
-	* @pszDateTo: "YYYYMMDD"格式，为NULL则默认为当前日历时间
+	* @pszDateFrom: "YYYY-MM-DD"格式，为NULL则默认为pszDateTo往前推一年
+	* @pszDateTo: "YYYY-MM-DD"格式，为NULL则默认为当前日历时间
 	* @nDateArr:  返回YYYYMMDD格式的整数日期数组，接收方必须将返回的数据copy一份保存起来
 	* @nDateLen:  nDateArr数组长度
 	* @return:    返回true或false表示成功或失败，注意即使成功nDateLen也有可能为0
@@ -284,6 +284,10 @@ interface IQuoteInfoCallback
 	*/
 	virtual void  OnPushMarketNewTrade(StockMktType eMkt, INT64 ddwLastTradeStamp, INT64 ddwNewTradeStamp) = 0;
 
+	/**
+	* 维持push连接alive的心跳推送
+	*/
+	virtual void  OnPushHeartBeat(SOCKET sock, UINT64 nTimeStampNow) = 0;
 };
 
 interface IQuoteKLCallback

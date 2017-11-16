@@ -177,17 +177,21 @@ void CProtoQueryUSOrder::GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const Pr
 {
 	static BOOL arOptional[] = {
 		TRUE, FALSE, TRUE,
+		TRUE, TRUE, TRUE, TRUE,
 	};
 	static EProtoFildType arFieldType[] = {
-		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_StringA,
+		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int64,
+		ProtoFild_StringA, ProtoFild_StringA, ProtoFild_StringA, ProtoFild_StringA,
 	};
 	static LPCSTR arFieldKey[] = {
-		"EnvType", "Cookie", "StatusFilterStr"
+		"EnvType", "Cookie", "OrderID",
+		"StatusFilterStr", "StockCode", "start_time", "end_time",
 	};
 
 	ProtoReqBodyType &body = const_cast<ProtoReqBodyType &>(reqData);
 	void *arPtr[] = {
-		&body.nEnvType, &body.nCookie, &body.strStatusFilter
+		&body.nEnvType, &body.nCookie, &body.nOrderID,
+		&body.strStatusFilter, &body.strStockCode, &body.strStartTime, &body.strEndTime
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);

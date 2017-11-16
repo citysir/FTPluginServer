@@ -171,7 +171,7 @@ void CPluginTickerPrice::NotifyQuoteDataUpdate(int nCmdID, INT64 nStockID)
 	CHECK_RET(nCmdID == PROTO_ID_QUOTE && nStockID, NORET);
 	CHECK_RET(m_pQuoteData, NORET);
 	
-	bool bIsSub = m_pQuoteData->IsSubStockOneType(nStockID, StockSubType_Simple);
+	bool bIsSub = m_pQuoteData->IsSubStockOneType(nStockID, StockSubType_Ticker);
 	if ( !bIsSub )
 	{
 		return;

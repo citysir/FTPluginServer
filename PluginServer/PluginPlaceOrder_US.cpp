@@ -49,6 +49,8 @@ void CPluginPlaceOrder_US::Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  
 
 	m_MsgHandler.SetEventInterface(this);
 	m_MsgHandler.Create();
+
+	m_stOrderIDCvt.Init(m_pTradeOp, this);
 }
 
 void CPluginPlaceOrder_US::Uninit()
@@ -185,13 +187,39 @@ void CPluginPlaceOrder_US::NotifyOnPlaceOrder(Trade_Env enEnv, UINT32 nCookie, T
 	ack.body.nCookie = pFindReq->req.body.nCookie;
 	ack.body.nLocalID = nLocalID;
 	ack.body.nSvrResult = enSvrRet;
-	ack.body.nSvrOrderID = m_pTradeOp->FindOrderSvrID(nLocalID);
-	CHECK_OP(ack.body.nSvrResult != 0 || ack.body.nSvrOrderID != 0, NOOP);
+	ack.body.nSvrOrderID = m_stOrderIDCvt.FindSvrOrderID(enEnv, nLocalID, true);
+	
+	//成功了， 但是svrid 还没得到，继续等待
+	if (Trade_SvrResult_Succeed == enSvrRet && 0 == nErrCode && 0 == ack.body.nSvrOrderID)
+	{
+		pFindReq->bWaitSvrIDAfterPlacedOK = true;
+	}
+	else
+	{
+		if (ack.body.nSvrOrderID != 0)
+		{
+			Trade_OrderItem OrderItem;
+			if (m_pTradeOp->GetOrderItem(ack.body.nSvrOrderID, OrderItem))
+			{
+				ack.body.nOrderType = OrderItem.nType;
+				ack.body.enSide = OrderItem.enSide;
+				ack.body.nStatus = OrderItem.nStatus;
+				ack.body.strStockCode = OrderItem.szCode;
+				ack.body.strStockName = OrderItem.szName;
+				ack.body.nPrice = OrderItem.nPrice;
+				ack.body.nQty = OrderItem.nQty;
+				ack.body.nDealtQty = OrderItem.nDealtQty;
+				ack.body.nDealtAvgPrice = int(round(OrderItem.fDealtAvgPrice * 1000));
+				ack.body.nSubmitedTime = OrderItem.nSubmitedTime;
+				ack.body.nUpdatedTime = OrderItem.nUpdatedTime;
+			}
+		}
 
-	HandleTradeAck(&ack, pFindReq->sock);
+		HandleTradeAck(&ack, pFindReq->sock);
 
-	m_vtReqData.erase(itReq);
-	delete pFindReq;
+		m_vtReqData.erase(itReq);
+		delete pFindReq;
+	}
 }
 
 void CPluginPlaceOrder_US::NotifySocketClosed(SOCKET sock)
@@ -212,6 +240,56 @@ void CPluginPlaceOrder_US::OnMsgEvent(int nEvent,WPARAM wParam,LPARAM lParam)
 	if ( EVENT_ID_ACK_REQUEST == nEvent )
 	{		
 	}	
+}
+
+void CPluginPlaceOrder_US::OnCvtOrderID_Local2Svr(int nResult, Trade_Env eEnv, INT64 nLocalID, INT64 nServerID)
+{
+	VT_REQ_TRADE_DATA::iterator it_req = m_vtReqData.begin();
+	for (; it_req != m_vtReqData.end();)
+	{
+		StockDataReq *pReq = *it_req;
+		if (pReq == NULL)
+		{
+			CHECK_OP(false, NOOP);
+			++it_req;
+			continue;
+		}
+		if (!pReq->bWaitSvrIDAfterPlacedOK)
+		{
+			++it_req;
+			continue;
+		}
+
+		TradeAckType ack;
+		ack.head = pReq->req.head;
+		ack.head.ddwErrCode = 0;
+		ack.body.nEnvType = pReq->req.body.nEnvType;
+		ack.body.nCookie = pReq->req.body.nCookie;
+		ack.body.nLocalID = nLocalID;
+		ack.body.nSvrOrderID = nServerID;
+		ack.body.nSvrResult = 0;
+		if (nServerID != 0)
+		{
+			Trade_OrderItem OrderItem;
+			if (m_pTradeOp->GetOrderItem(nServerID, OrderItem))
+			{
+				ack.body.nOrderType = OrderItem.nType;
+				ack.body.enSide = OrderItem.enSide;
+				ack.body.nStatus = OrderItem.nStatus;
+				ack.body.strStockCode = OrderItem.szCode;
+				ack.body.strStockName = OrderItem.szName;
+				ack.body.nPrice = OrderItem.nPrice;
+				ack.body.nQty = OrderItem.nQty;
+				ack.body.nDealtQty = OrderItem.nDealtQty;
+				ack.body.nDealtAvgPrice = int(round(OrderItem.fDealtAvgPrice * 1000));
+				ack.body.nSubmitedTime = OrderItem.nSubmitedTime;
+				ack.body.nUpdatedTime = OrderItem.nUpdatedTime;
+			}
+		}
+		HandleTradeAck(&ack, pReq->sock);
+		it_req = m_vtReqData.erase(it_req);
+		delete pReq;
+	}
 }
 
 void CPluginPlaceOrder_US::HandleTimeoutReq()
