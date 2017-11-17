@@ -156,18 +156,19 @@ void  CPluginSetOrderStatus_HK::DoTryProcessTradeOpt(StockDataReq* pReq)
 			// 等待svrid 取到后再实际调用接口
 			if (0 == body.nSvrOrderID)
 			{ 
-				return; 
+				return;
 			}
 		} 
 	} 
 	
 	//减少不必要的请求， 避免超过无意义的超过调用频率
-	if (IsNewStateNotNeedReq((Trade_Env)body.nEnvType, body.nSvrOrderID, (Trade_SetOrderStatus)body.nSetOrderStatus))
+	QueryDataErrCode eErrCode = QueryData_Suc;
+	if (IsNewStateNotNeedReq((Trade_Env)body.nEnvType, body.nSvrOrderID, (Trade_SetOrderStatus)body.nSetOrderStatus, eErrCode))
 	{
 		TradeAckType ack;
 		ack.head = req.head;
-		ack.head.ddwErrCode = 0;
-		ack.head.strErrDesc = "";
+		ack.head.ddwErrCode = UtilPlugin::ConvertErrCode(eErrCode);
+		ack.head.strErrDesc = UtilPlugin::GetErrStrByCode(eErrCode);
 
 		ack.body.nEnvType = body.nEnvType;
 		ack.body.nCookie = body.nCookie;
@@ -463,15 +464,18 @@ void CPluginSetOrderStatus_HK::DoClearReqInfo(SOCKET socket)
 	}
 }
 
-bool CPluginSetOrderStatus_HK::IsNewStateNotNeedReq(Trade_Env eEnv, INT64 nSvrOrderID, Trade_SetOrderStatus eNewStatus)
+bool CPluginSetOrderStatus_HK::IsNewStateNotNeedReq(Trade_Env eEnv, INT64 nSvrOrderID, Trade_SetOrderStatus eNewStatus, QueryDataErrCode& eErrCode)
 {
+	eErrCode = QueryData_Suc;
 	if (0 == nSvrOrderID)
 	{
+		eErrCode = QueryData_FailErrParam;
 		return false;
 	}
 	Trade_OrderStatus eCurStatus = Trade_OrderStatus_Processing;
 	if (!m_pTradeOp->GetOrderStatus(eEnv, nSvrOrderID, eCurStatus))
 	{
+		eErrCode = QueryData_FailErrParam;
 		return false;
 	}
 
@@ -479,7 +483,11 @@ bool CPluginSetOrderStatus_HK::IsNewStateNotNeedReq(Trade_Env eEnv, INT64 nSvrOr
 	switch (eNewStatus)
 	{
 	case Trade_SetOrderStatus_Cancel:
-		bRet = Trade_OrderStatus_Cancelled == eCurStatus || Trade_OrderStatus_Deleted == eCurStatus;
+		bRet = Trade_OrderStatus_Cancelled == eCurStatus || Trade_OrderStatus_Deleted == eCurStatus || Trade_OrderStatus_Processing == eCurStatus;
+		if (Trade_OrderStatus_Processing == eCurStatus)
+		{
+			eErrCode = QueryData_FailErrNotPermit;
+		}
 		break;
 	case Trade_SetOrderStatus_Disable:
 		bRet = Trade_OrderStatus_Disabled == eCurStatus;

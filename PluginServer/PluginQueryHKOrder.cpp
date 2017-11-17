@@ -111,7 +111,10 @@ void CPluginQueryHKOrder::SetTradeReqData(int nCmdID, const Json::Value &jsnVal,
 
 	//tomodify 3
 	QueryHKOrderReqBody &body = req.body;	
-	bool bRet = m_pTradeOp->QueryOrderList((Trade_Env)body.nEnvType, (UINT32*)&pReq->dwLocalCookie);
+	wstring strStartTime, strEndTime;
+	CA::UTF2Unicode(body.strStartTime.c_str(), strStartTime);
+	CA::UTF2Unicode(body.strEndTime.c_str(), strEndTime);
+	bool bRet = m_pTradeOp->QueryOrderList((Trade_Env)body.nEnvType, (UINT32*)&pReq->dwLocalCookie, strStartTime.c_str(), strEndTime.c_str());
 
 	if ( !bRet )
 	{
@@ -182,8 +185,11 @@ void CPluginQueryHKOrder::NotifyOnQueryHKOrder(Trade_Env enEnv, UINT32 nCookie, 
 	ack.body.nEnvType = enEnv;
 	ack.body.nCookie = pFindReq->req.body.nCookie;
 
-	std::vector<int> vtStatus;
-	DoGetFilterStatus(pFindReq->req.body.strStatusFilter, vtStatus);
+	std::set<int> setStatus;
+	std::set<std::wstring> setCode;
+	INT64 nFilterOrderID = pFindReq->req.body.nOrderID;
+	DoGetFilterStatus(pFindReq->req.body.strStatusFilter, setStatus);
+	DoGetFilterCode(pFindReq->req.body.strStockCode, setCode);
 
 	if ( nCount > 0 && pArrOrder )
 	{
@@ -201,12 +207,12 @@ void CPluginQueryHKOrder::NotifyOnQueryHKOrder(Trade_Env enEnv, UINT32 nCookie, 
 			item.nPrice = order.nPrice;
 			item.nQty = order.nQty;
 			item.nDealtQty = order.nDealtQty;
-			item.nDealtAvgPrice = int(order.fDealtAvgPrice * 1000);
+			item.nDealtAvgPrice = int(round(order.fDealtAvgPrice * 1000));
 			item.nSubmitedTime = order.nSubmitedTime;
 			item.nUpdatedTime = order.nUpdatedTime;
 			item.nErrCode = order.nErrCode;
 
-			if (vtStatus.size() == 0 || std::find(vtStatus.begin(), vtStatus.end(), order.nStatus) != vtStatus.end())
+			if (IsFitFilter(item, nFilterOrderID, setStatus, setCode))
 			{
 				ack.body.vtOrder.push_back(item);
 			}
@@ -358,9 +364,9 @@ void CPluginQueryHKOrder::DoClearReqInfo(SOCKET socket)
 	}
 }
 
-void CPluginQueryHKOrder::DoGetFilterStatus(const std::string& strFilter, std::vector<int>& arStatus)
+void CPluginQueryHKOrder::DoGetFilterStatus(const std::string& strFilter, std::set<int>& setStatus)
 {
-	arStatus.clear();
+	setStatus.clear();
 	CString strDiv = _T(",");
 	std::vector<CString> arFilterStr;
 	CA::DivStr(CString(strFilter.c_str()), strDiv, arFilterStr);
@@ -368,8 +374,52 @@ void CPluginQueryHKOrder::DoGetFilterStatus(const std::string& strFilter, std::v
 	{
 		int nTmp = _ttoi(arFilterStr[i]);
 
-		arStatus.push_back(nTmp);
+		setStatus.insert(nTmp);
 	}
 }
 
+void CPluginQueryHKOrder::DoGetFilterCode(const std::string& strFilter, std::set<std::wstring>& setCode)
+{
+	setCode.clear();
+	if (strFilter.empty())
+	{
+		return;
+	}
+	setCode.insert(L"");//防止当作没有限制,添加空不影响筛选结果
+
+	CString strDiv = _T(",");
+	std::vector<CString> vtFilterStr;
+	std::wstring wstrFilter;
+	CA::UTF2Unicode(strFilter.c_str(), wstrFilter);
+	CA::DivStr(wstrFilter.c_str(), strDiv, vtFilterStr);
+	for (auto iter = vtFilterStr.begin(); iter != vtFilterStr.end(); ++iter)
+	{
+		iter->TrimLeft();
+		iter->TrimRight();
+
+		std::wstring wstrCode = iter->GetString();
+		setCode.insert(wstrCode);
+	}
+}
  
+bool CPluginQueryHKOrder::IsFitFilter(const TradeAckItemType& AckItem, INT64 nOrderID,
+	const std::set<int>& vtStatus, const std::set<std::wstring>& setCode)
+{
+	//&&关系
+	if (nOrderID != 0 && AckItem.nOrderID != nOrderID)
+	{
+		return false;
+	}
+
+	if (!vtStatus.empty() && vtStatus.count(AckItem.nStatus) == 0)
+	{
+		return false;
+	}
+
+	if (!setCode.empty() && setCode.count(AckItem.strStockCode) == 0)
+	{
+		return false;
+	}
+
+	return true;
+}

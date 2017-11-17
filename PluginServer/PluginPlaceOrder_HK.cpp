@@ -178,6 +178,27 @@ void CPluginPlaceOrder_HK::NotifyOnPlaceOrder(Trade_Env enEnv, UINT nCookie, Tra
 	ack.body.nLocalID = nLocalID;
 	ack.body.nSvrResult = enSvrRet;
 	ack.body.nSvrOrderID = m_pTradeOp->FindOrderSvrID(enEnv, nLocalID);
+
+	if (ack.body.nSvrOrderID != 0)
+	{
+		Trade_OrderItem OrderItem;
+		if (m_pTradeOp->GetOrderItem(enEnv, ack.body.nSvrOrderID, OrderItem))
+		{
+			ack.body.nOrderType = OrderItem.nType;
+			ack.body.enSide = OrderItem.enSide;
+			ack.body.nStatus = OrderItem.nStatus;
+			ack.body.strStockCode = OrderItem.szCode;
+			ack.body.strStockName = OrderItem.szName;
+			ack.body.nPrice = OrderItem.nPrice;
+			ack.body.nQty = OrderItem.nQty;
+			ack.body.nDealtQty = OrderItem.nDealtQty;
+			ack.body.nDealtAvgPrice = int(round(OrderItem.fDealtAvgPrice * 1000));
+			ack.body.nSubmitedTime = OrderItem.nSubmitedTime;
+			ack.body.nUpdatedTime = OrderItem.nUpdatedTime;
+			ack.body.nErrCode = OrderItem.nErrCode;
+		}
+	}	
+
 	CHECK_OP(ack.body.nSvrResult != 0 || ack.body.nSvrOrderID != 0, NOOP);
 
 	HandleTradeAck(&ack, pFindReq->sock);

@@ -223,17 +223,33 @@ void CProtoPlaceOrder::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Prot
 {
 	static BOOL arOptional[] = {
 		FALSE, FALSE, FALSE, FALSE,TRUE,
+		FALSE, FALSE, FALSE, FALSE,
+		FALSE, FALSE, FALSE,
+		FALSE, FALSE, FALSE,
+		FALSE, FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int64, ProtoFild_Int32, ProtoFild_Int64,
+		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32, ProtoFild_StringW,
+		ProtoFild_StringW, ProtoFild_Int64, ProtoFild_Int64,
+		ProtoFild_Int64, ProtoFild_Int32, ProtoFild_Int64,
+		ProtoFild_Int64, ProtoFild_Int32,
 	};
 	static LPCSTR arFieldKey[] = {
-		"EnvType", "Cookie", "LocalID", "SvrResult", "OrderID"
+		"EnvType", "Cookie", "LocalID", "SvrResult", "OrderID",
+		"OrderType", "OrderSide", "Status", "StockCode",
+		"StockName", "Price", "Qty",
+		"DealtQty", "DealtAvgPrice", "SubmitedTime",
+		"UpdatedTime", "ErrCode",
 	};
 
 	ProtoAckBodyType &body = const_cast<ProtoAckBodyType &>(ackData);
 	void *arPtr[] = {
 		&body.nEnvType,	&body.nCookie, &body.nLocalID, &body.nSvrResult, &body.nSvrOrderID,
+		&body.nOrderType, &body.enSide, &body.nStatus, &body.strStockCode,
+		&body.strStockName, &body.nPrice, &body.nQty,
+		&body.nDealtQty, &body.nDealtAvgPrice, &body.nSubmitedTime,
+		&body.nUpdatedTime, &body.nErrCode,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);

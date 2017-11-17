@@ -58,6 +58,20 @@ INT64 IFTStockUtil::GetStockHashVal(const wchar_t* pwstrCode, StockMktType eMktT
 	return GetStockHashVal((const char*)CW2A(pwstrCode), eMktType);
 }
 
+StockMktType IFTStockUtil::GetStockMktType(const char* pstrMktSuffix)
+{
+	if (m_pImpl)
+	{
+		return m_pImpl->GetStockMktType(pstrMktSuffix);
+	}
+	return StockMkt_None;
+}
+
+StockMktType IFTStockUtil::GetStockMktType(const wchar_t* pwstrMktSuffix)
+{
+	return GetStockMktType((const char*)CW2A(pwstrMktSuffix));
+}
+
 void IFTStockUtil::Uninit()
 {
 	if (m_pImpl)

@@ -65,7 +65,7 @@ void CPluginPushBatchBasic::PushStockData(INT64 nStockID, SOCKET sock)
 	{
 		PushBatchBasicAckItem Item;
 		Item.nHigh = batchprice.dwHigh;
-		Item.nOpen = batchprice.dwLastClose;
+		Item.nOpen = batchprice.dwOpen;
 		Item.nLastClose = batchprice.dwLastClose;
 		Item.nLow = batchprice.dwLow;
 		Item.nCur = batchprice.dwCur;

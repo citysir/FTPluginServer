@@ -139,6 +139,11 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			TRUE, TRUE, TRUE,
 			TRUE, TRUE, TRUE,
 			TRUE, TRUE, TRUE,
+
+			TRUE, 
+			TRUE, TRUE, TRUE,
+			TRUE, TRUE, TRUE,
+			TRUE, TRUE, TRUE,
 		};
 		static EProtoFildType arFieldType[] = {
 			ProtoFild_Int64, ProtoFild_StringA, ProtoFild_Int32,
@@ -157,6 +162,10 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			ProtoFild_Int64, ProtoFild_Int64, ProtoFild_Int32,
 			ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 
+			ProtoFild_Int32,
+			ProtoFild_Int64, ProtoFild_Int64, ProtoFild_Int64,
+			ProtoFild_Int64, ProtoFild_Int64, ProtoFild_Int64,
+			ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 		};
 		static LPCSTR arFieldKey[] = { 
 			"StockID",	"StockCode",  "MarketType",
@@ -175,6 +184,12 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			"Wrt_OwnerStockCode", "Wrt_OwnerMarketType", "Wrt_RecoveryPrice", 
 			"Wrt_StreetVol", "Wrt_IssueVol", "Wrt_StreetRatio",
 			"Wrt_Delta", "Wrt_ImpliedVolatility", "Wrt_Premium",
+
+			//正股信息
+			"Eqt_Valid", 
+			"Eqt_IssuedShares", "Eqt_NetAssetValue", "Eqt_NetProfit",
+			"Eqt_EarningPerShare", "Eqt_OutStandingShares", "Eqt_NetAssetPerShare",
+			"Eqt_EYRatio", "Eqt_PERatio", "Eqt_PBRatio",
 		};
 
 		SnapshotAckItem *pAckItem = (SnapshotAckItem *)pStruct;
@@ -194,6 +209,11 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			&pAckItem->stWrtData.strOwnerStockCode, &pAckItem->stWrtData.nOwnerStockMarket, &pAckItem->stWrtData.nRecoveryPrice,
 			&pAckItem->stWrtData.nStreetVol, &pAckItem->stWrtData.nIssueVol, &pAckItem->stWrtData.nStreetRatio, 
 			&pAckItem->stWrtData.nDelta, &pAckItem->stWrtData.nImpliedVolatility, &pAckItem->stWrtData.nPremium,
+
+			&pAckItem->stEquitiesData.bDataValid,
+			&pAckItem->stEquitiesData.nIssuedShares, &pAckItem->stEquitiesData.nNetAssetValue, &pAckItem->stEquitiesData.nNetProfit,
+			&pAckItem->stEquitiesData.nEarningPerShare, &pAckItem->stEquitiesData.nOutStandingShares, &pAckItem->stEquitiesData.nNetAssetPerShare,
+			&pAckItem->stEquitiesData.nEYRatio, &pAckItem->stEquitiesData.nPERatio, &pAckItem->stEquitiesData.nPBRatio,
 		};
 		CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
 		CHECK_OP(_countof(arOptional) == _countof(arFieldKey), NOOP);

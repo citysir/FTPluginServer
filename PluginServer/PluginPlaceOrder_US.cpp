@@ -196,6 +196,24 @@ void CPluginPlaceOrder_US::NotifyOnPlaceOrder(Trade_Env enEnv, UINT32 nCookie, T
 	}
 	else
 	{
+		if (ack.body.nSvrOrderID != 0)
+		{
+			Trade_OrderItem OrderItem;
+			if (m_pTradeOp->GetOrderItem(ack.body.nSvrOrderID, OrderItem))
+			{
+				ack.body.nOrderType = OrderItem.nType;
+				ack.body.enSide = OrderItem.enSide;
+				ack.body.nStatus = OrderItem.nStatus;
+				ack.body.strStockCode = OrderItem.szCode;
+				ack.body.strStockName = OrderItem.szName;
+				ack.body.nPrice = OrderItem.nPrice;
+				ack.body.nQty = OrderItem.nQty;
+				ack.body.nDealtQty = OrderItem.nDealtQty;
+				ack.body.nDealtAvgPrice = int(round(OrderItem.fDealtAvgPrice * 1000));
+				ack.body.nSubmitedTime = OrderItem.nSubmitedTime;
+				ack.body.nUpdatedTime = OrderItem.nUpdatedTime;
+			}
+		}
 		HandleTradeAck(&ack, pFindReq->sock);
 
 		m_vtReqData.erase(itReq);
@@ -250,6 +268,24 @@ void CPluginPlaceOrder_US::OnCvtOrderID_Local2Svr(int nResult, Trade_Env eEnv, I
 		ack.body.nSvrOrderID = nServerID;
 		ack.body.nSvrResult = 0;
 
+		if (nServerID != 0)
+		{
+			Trade_OrderItem OrderItem;
+			if (m_pTradeOp->GetOrderItem(nServerID, OrderItem))
+			{
+				ack.body.nOrderType = OrderItem.nType;
+				ack.body.enSide = OrderItem.enSide;
+				ack.body.nStatus = OrderItem.nStatus;
+				ack.body.strStockCode = OrderItem.szCode;
+				ack.body.strStockName = OrderItem.szName;
+				ack.body.nPrice = OrderItem.nPrice;
+				ack.body.nQty = OrderItem.nQty;
+				ack.body.nDealtQty = OrderItem.nDealtQty;
+				ack.body.nDealtAvgPrice = int(round(OrderItem.fDealtAvgPrice * 1000));
+				ack.body.nSubmitedTime = OrderItem.nSubmitedTime;
+				ack.body.nUpdatedTime = OrderItem.nUpdatedTime;
+			}
+		}
 		HandleTradeAck(&ack, pReq->sock);
 		it_req = m_vtReqData.erase(it_req);
 		delete pReq;

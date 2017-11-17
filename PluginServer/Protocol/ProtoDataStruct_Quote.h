@@ -625,6 +625,28 @@ struct SnapshotAckItem
 	UINT32 nLostSize; //每手
 	std::string strUpdateTime; //增加字符串时间
 
+	//正股类型数据
+	struct tagEquitiesData
+	{
+		BOOL bDataValid; //数据是否有效
+		UINT64 nIssuedShares; //发行股本,即总股本
+		UINT64 nNetAssetValue; //资产净值
+		UINT64 nNetProfit; //盈利（亏损）
+		UINT64 nEarningPerShare; //每股盈利
+		UINT64 nOutStandingShares; //流通股本
+		UINT64 nNetAssetPerShare; //每股净资产
+		int nEYRatio; //收益率
+		int nPERatio; //市盈率
+		int nPBRatio; //市净率 
+		tagEquitiesData()
+		{
+			bDataValid = 0;
+			nIssuedShares = 0; nNetAssetValue = 0; nNetProfit = 0;
+			nEarningPerShare = 0; nOutStandingShares = 0; nNetAssetPerShare = 0;
+			nEYRatio = 0; nPERatio = 0; nPBRatio = 0;
+		}
+	}stEquitiesData;
+
 	struct tagWarrantData
 	{
 		BOOL bDataValid;  //如果非涡轮 == 0 
@@ -1550,6 +1572,8 @@ struct GlobalStateAckBody
 	int nMarketStateHKFuture;
 	int nQuoteLogined;
 	int nTradeLogined;
+
+	UINT64 nSvrTimeStamp;
 
 	GlobalStateAckBody()
 	{

@@ -2,7 +2,6 @@
 #include "PluginHKTradeServer.h"
 #include "PluginNetwork.h"
 #include "Protocol/ProtoOrderErrorPush.h"
-#include "Protocol/ProtoOrderUpdatePush.h"
 #include "Protocol/ProtoBasicPrice.h"
 #include "IManage_SecurityNum.h"
 
@@ -42,6 +41,10 @@ void CPluginHKTradeServer::InitTradeSvr(IFTPluginCore* pPluginCore, CPluginNetwo
 	m_pPluginCore = pPluginCore;
 	pPluginCore->QueryFTInterface(IID_IFTTrade_HK, (void**)&m_pTradeOp);
 	pPluginCore->QueryFTInterface(IID_IFTDataReport, (void**)&m_pDataReport);
+	
+	IFTQuoteData *pQuoteData = NULL;
+	pPluginCore->QueryFTInterface(IID_IFTQuoteData, (void**)&pQuoteData);
+	CHECK_OP(pQuoteData, NOOP);
 
 	if ( m_pTradeOp == NULL || m_pDataReport == NULL )
 	{
@@ -59,8 +62,14 @@ void CPluginHKTradeServer::InitTradeSvr(IFTPluginCore* pPluginCore, CPluginNetwo
 	m_UnlockTrade.Init(this, m_pTradeOp);
 	m_QueryAccInfo.Init(this, m_pTradeOp);
 	m_QueryHKOrder.Init(this, m_pTradeOp);
-	m_QueryHKPos.Init(this, m_pTradeOp);
+	m_QueryHKPos.Init(this, m_pTradeOp, pQuoteData);
 	m_QueryHKDeal.Init(this, m_pTradeOp);
+	m_QueryHKHisOrder.Init(this, m_pTradeOp);
+	m_QueryHKHisDeal.Init(this, m_pTradeOp);
+	m_PushHKOrder.Init(this, m_pTradeOp);
+	m_PushHKDeal.Init(this, m_pTradeOp);
+	m_SubHKOrderDeal.Init(this, m_pTradeOp, &m_PushHKOrder, &m_PushHKDeal);
+	
 }
 
 void CPluginHKTradeServer::UninitTradeSvr()
@@ -75,6 +84,11 @@ void CPluginHKTradeServer::UninitTradeSvr()
 		m_ChangeOrder.Uninit();
 		m_SetOrderStatus.Uninit();
 		m_QueryHKDeal.Uninit();
+		m_QueryHKHisOrder.Uninit();
+		m_QueryHKHisDeal.Uninit();
+		m_PushHKOrder.Uninit();
+		m_PushHKDeal.Uninit();
+		m_SubHKOrderDeal.Uninit();		
 
 		m_pTradeOp = NULL;
 		m_pDataReport = NULL;
@@ -120,6 +134,18 @@ void CPluginHKTradeServer::SetTradeReqData(int nCmdID, const Json::Value &jsnVal
 		m_QueryHKDeal.SetTradeReqData(nCmdID, jsnVal, sock);
 		break;
 
+	case PROTO_ID_TDHK_QUERY_HIS_ORDER:
+		m_QueryHKHisOrder.SetTradeReqData(nCmdID, jsnVal, sock);
+		break;
+
+	case PROTO_ID_TDHK_QUERY_HIS_DEAL:
+		m_QueryHKHisDeal.SetTradeReqData(nCmdID, jsnVal, sock);
+		break;
+
+	case PROTO_ID_TDHK_SUB_ORDER_DEAL:
+		m_SubHKOrderDeal.SetTradeReqData(nCmdID, jsnVal, sock);
+		break;
+
 	default:
 		CHECK_OP(false, NOOP);
 		BasicPrice_Ack Ack;
@@ -159,10 +185,24 @@ void CPluginHKTradeServer::CloseSocket(SOCKET sock)
 
 	m_QueryHKPos.NotifySocketClosed(sock);
 	m_QueryHKDeal.NotifySocketClosed(sock);
+
+	m_QueryHKHisOrder.NotifySocketClosed(sock);
+	m_QueryHKHisDeal.NotifySocketClosed(sock);
+
+	m_PushHKDeal.NotifySocketClosed(sock);
+	m_PushHKOrder.NotifySocketClosed(sock);
+	m_SubHKOrderDeal.NotifySocketClosed(sock);
+
 }
 
 void CPluginHKTradeServer::OnUnlockTrade(UINT32 nCookie, Trade_SvrResult enSvrRet, UINT64 nErrCode)
 {
+	SOCKET sock;
+	if (!IManage_SecurityNum::GetSocketByCookie(nCookie, sock))
+	{
+		return;//不是通过脚本的解锁
+	}
+	
 	if (enSvrRet == Trade_SvrResult_Failed)
 	{
 		IManage_SecurityNum::DeleteCookieSocket(nCookie);
@@ -173,6 +213,7 @@ void CPluginHKTradeServer::OnUnlockTrade(UINT32 nCookie, Trade_SvrResult enSvrRe
 	}
 
 	m_UnlockTrade.NotifyOnUnlockTrade(nCookie, enSvrRet, nErrCode);
+	m_SubHKOrderDeal.NotifyUnLockTrade(sock, enSvrRet);
 }
 
 void CPluginHKTradeServer::OnQueryOrderList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder)
@@ -190,6 +231,16 @@ void CPluginHKTradeServer::OnQueryPositionList(Trade_Env enEnv, UINT32 nCookie, 
 	m_QueryHKPos.NotifyOnQueryPosition(enEnv, nCookie, nCount, pArrPosition);
 }
 
+void CPluginHKTradeServer::OnQueryHisOrderList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_OrderItem* pArrOrder)
+{
+	m_QueryHKHisOrder.NotifyOnQueryHKHisOrder(enEnv, nCookie, nCount, pArrOrder);
+}
+
+void CPluginHKTradeServer::OnQueryHisDealList(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal)
+{
+	m_QueryHKHisDeal.NotifyOnQueryHKHisDeal(enEnv, nCookie, nCount, pArrDeal);
+}
+
 void CPluginHKTradeServer::OnQueryAccInfo(Trade_Env enEnv, UINT32 nCookie, const Trade_AccInfo& accInfo, int nResult)
 {
 	m_QueryAccInfo.NotifyOnQueryHKAccInfo(enEnv, nCookie, accInfo, nResult);
@@ -202,7 +253,18 @@ void CPluginHKTradeServer::OnPlaceOrder(Trade_Env enEnv, UINT nCookie, Trade_Svr
 
 void CPluginHKTradeServer::OnOrderUpdate(Trade_Env enEnv, const Trade_OrderItem& orderItem)
 { 
- 
+	std::vector<SOCKET> vtSock;
+	const UINT64 &nOrderID = orderItem.nOrderID;
+	m_SubHKOrderDeal.GetSubOrderSocket(enEnv, nOrderID, vtSock);
+	for (auto iter = vtSock.begin(); iter != vtSock.end(); ++iter)
+	{
+		m_PushHKOrder.PushOrderData(orderItem, (int)enEnv, *iter);
+	}
+
+	if (IsHKOrderFinalStatus(orderItem.nStatus))
+ 	{
+		m_SubHKOrderDeal.ClearSubOrderInfo(nOrderID);
+ 	}
 }
 
 void CPluginHKTradeServer::OnSetOrderStatus(Trade_Env enEnv, UINT nCookie, Trade_SvrResult enSvrRet, UINT64 nOrderID, UINT16 nErrCode)
@@ -219,3 +281,15 @@ void CPluginHKTradeServer::OnOrderErrNotify(Trade_Env enEnv, UINT64 nOrderID, Tr
 {
 	 
 }
+
+void CPluginHKTradeServer::OnDealUpdate(Trade_Env enEnv, const Trade_DealItem& dealItem)
+{
+	std::vector<SOCKET> vtSock;
+	const UINT64 &nOrderID = dealItem.nOrderID;
+	m_SubHKOrderDeal.GetSubDealSocket(enEnv, nOrderID, vtSock);
+	for (auto iter = vtSock.begin(); iter != vtSock.end(); ++iter)
+	{
+		m_PushHKDeal.PushDealData(dealItem, (int)enEnv, *iter);
+	}
+}
+

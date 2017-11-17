@@ -58,3 +58,9 @@ void IManage_SecurityNum::AddSafeSocket(const UINT32 &nCookie)
 	Init();
 	ms_pImpl->AddSafeSocket(nCookie);
 }
+
+bool IManage_SecurityNum::GetSocketByCookie(UINT32 nCookie, SOCKET &sock)
+{
+	Init();
+	return ms_pImpl->GetSocketByCookie(nCookie, sock);
+}

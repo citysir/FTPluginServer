@@ -125,6 +125,7 @@ ENV/
 .ropeproject
 
 !.gitignore
->>>>>>> Stashed changes
 .idea/
 
+Debug
+Release

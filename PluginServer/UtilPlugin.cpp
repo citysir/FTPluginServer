@@ -83,6 +83,9 @@ std::string UtilPlugin::GetErrStrByCode(QueryDataErrCode eCode)
 	case QueryData_FailErrParam:
 		strErr = L"参数错误";
 		break;
+	case QueryData_FailErrNotPermit:
+		strErr = L"当前请求不允许";
+		break;
 	default:
 		strErr.Format(_T("请求未知错误:%d"), (int)eCode);
 		break;
@@ -124,6 +127,9 @@ ProtoErrCode UtilPlugin::ConvertErrCode(QueryDataErrCode eCode)
 		break;
 	case QueryData_FailErrParam:
 		eRet = PROTO_ERR_PARAM_ERR;
+		break;
+	case QueryData_FailErrNotPermit:
+		eRet = PROTO_ERR_NOT_PERMIT;
 		break;
 	default:
 		break;

@@ -33,6 +33,7 @@ protected:
 	//tomodify 1
 	typedef QueryHKOrder_Req	TradeReqType;
 	typedef QueryHKOrder_Ack	TradeAckType;
+	typedef QueryHKOrderAckItem	TradeAckItemType;
 
 	struct	StockDataReq
 	{
@@ -53,7 +54,10 @@ protected:
 	
 private: 
 	bool DoDeleteReqData(StockDataReq* pReq); 
-	void DoGetFilterStatus(const std::string& strFilter, std::vector<int>& arStatus);
+	void DoGetFilterStatus(const std::string& strFilter, std::set<int>& setStatus);
+	void DoGetFilterCode(const std::string& strFilter, std::set<std::wstring>& setCode);
+	bool IsFitFilter(const TradeAckItemType& AckItem, INT64 nOrderID,
+		const std::set<int>& setStatus, const std::set<std::wstring>& setCode);
 
 private:
 	void DoClearReqInfo(SOCKET socket);

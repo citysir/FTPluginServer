@@ -29,12 +29,12 @@ CPluginQueryUSPosition::~CPluginQueryUSPosition()
 	Uninit();
 }
 
-void CPluginQueryUSPosition::Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  pTradeOp)
+void CPluginQueryUSPosition::Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  pTradeOp, IFTQuoteData *pQuote)
 {
 	if ( m_pTradeServer != NULL )
 		return;
 
-	if ( pTradeServer == NULL || pTradeOp == NULL )
+	if (pTradeServer == NULL || pTradeOp == NULL)
 	{
 		ASSERT(false);
 		return;
@@ -42,6 +42,8 @@ void CPluginQueryUSPosition::Init(CPluginUSTradeServer* pTradeServer, ITrade_US*
 
 	m_pTradeServer = pTradeServer;
 	m_pTradeOp = pTradeOp;
+	m_pQuoteData = pQuote;
+
 	m_TimerWnd.SetEventInterface(this);
 	m_TimerWnd.Create();
 
@@ -181,6 +183,13 @@ void CPluginQueryUSPosition::NotifyOnQueryPosition(Trade_Env enEnv, UINT32 nCook
 	ack.body.nEnvType = enEnv;
 	ack.body.nCookie = pFindReq->req.body.nCookie;
 
+	std::set<int> setStockType;
+	std::set<std::wstring> setCode;
+	DoGetFilterStockType(pFindReq->req.body.strStockType, setStockType);
+	DoGetFilterCode(pFindReq->req.body.strStockCode, setCode);
+	PLRatioCond PLRatioCondition;
+	DoGetFilterPLRatio(pFindReq->req.body.strPLRatioMin, PLRatioCondition.nPLRatioMin, PLRatioCondition.bPLRatioMinValid);
+	DoGetFilterPLRatio(pFindReq->req.body.strPLRatioMax, PLRatioCondition.nPLRatioMax, PLRatioCondition.bPLRatioMaxValid);
 	if ( nCount > 0 && pArrPosition )
 	{
 		for ( int n = 0; n < nCount; n++ )
@@ -193,11 +202,11 @@ void CPluginQueryUSPosition::NotifyOnQueryPosition(Trade_Env enEnv, UINT32 nCook
 			item.nCanSellQty = pos.nCanSellQty;
 			item.nNominalPrice = pos.nNominalPrice;
 			item.nMarketVal = pos.nMarketVal;
-			item.nCostPrice = int(pos.fCostPrice * 1000);
+			item.nCostPrice = int(round(pos.fCostPrice * 1000));
 			item.nCostPriceValid = pos.bCostPriceValid;
 			item.nPLVal = pos.nPLVal;
 			item.nPLValValid = pos.bPLValValid;
-			item.nPLRatio = int(pos.fPLRatio * 100000);
+			item.nPLRatio = int(round(pos.fPLRatio * 100000));
 			item.nPLRatioValid = pos.bPLRatioValid;
 			
 			item.nToday_PLVal = pos.nToday_PLVal;
@@ -205,7 +214,10 @@ void CPluginQueryUSPosition::NotifyOnQueryPosition(Trade_Env enEnv, UINT32 nCook
 			item.nToday_BuyVal = pos.nToday_BuyVal;
 			item.nToday_SellQty = pos.nToday_SellQty;
 			item.nToday_SellVal = pos.nToday_SellVal;
-			ack.body.vtPosition.push_back(item);
+			if (IsFitFilter(item, PLRatioCondition, setStockType, setCode))
+			{
+				ack.body.vtPosition.push_back(item);
+			}
 		}
 	}	 
 	
@@ -352,4 +364,103 @@ void CPluginQueryUSPosition::DoClearReqInfo(SOCKET socket)
 			++itReq;
 		}
 	}
+}
+
+void CPluginQueryUSPosition::DoGetFilterCode(const std::string& strFilter, std::set<std::wstring>& setCode)
+{
+	setCode.clear();
+	if (strFilter.empty())
+	{
+		return;
+	}
+	setCode.insert(L"");//防止当作没有限制,添加空不影响筛选结果
+
+	CString strDiv = _T(",");
+	std::vector<CString> vtFilterStr;
+	std::wstring wstrFilter;
+	CA::UTF2Unicode(strFilter.c_str(), wstrFilter);
+	CA::DivStr(wstrFilter.c_str(), strDiv, vtFilterStr);
+	for (auto iter = vtFilterStr.begin(); iter != vtFilterStr.end(); ++iter)
+	{
+		iter->TrimLeft();
+		iter->TrimRight();
+
+		std::wstring wstrCode = iter->GetString();
+		setCode.insert(wstrCode);
+	}
+}
+
+void CPluginQueryUSPosition::DoGetFilterStockType(const std::string& strFilter, std::set<int>& setStockType)
+{
+	setStockType.clear();
+	CString strDiv = _T(",");
+	std::vector<CString> arFilterStr;
+	CA::DivStr(CString(strFilter.c_str()), strDiv, arFilterStr);
+	for (UINT i = 0; i < arFilterStr.size(); i++)
+	{
+		int nTmp = _ttoi(arFilterStr[i]);
+
+		setStockType.insert(nTmp);
+	}
+}
+
+void CPluginQueryUSPosition::DoGetFilterPLRatio(const std::string &strFilter, int &fPLRatioMinMax, bool &bPLRatioMinMaxValid)
+{
+	bPLRatioMinMaxValid = !strFilter.empty();
+	if (bPLRatioMinMaxValid)
+	{
+		fPLRatioMinMax = atoi(strFilter.c_str());
+	}
+}
+
+bool CPluginQueryUSPosition::IsFitFilter(const TradeAckItemType& AckItem, const PLRatioCond& PLRatioCondition,
+	const std::set<int>& setStockType, const std::set<std::wstring>& setCode)
+{
+	if (PLRatioCondition.bPLRatioMinValid || PLRatioCondition.bPLRatioMaxValid)
+	{
+		if (AckItem.nPLRatioValid == 0)
+		{
+			return false;
+		}
+
+		if (PLRatioCondition.bPLRatioMinValid)
+		{
+			if (AckItem.nPLRatio < PLRatioCondition.nPLRatioMin)
+			{
+				return false;
+			}
+		}
+		
+		if (PLRatioCondition.bPLRatioMaxValid)
+		{
+			if (AckItem.nPLRatio > PLRatioCondition.nPLRatioMax)
+			{
+				return false;
+			}
+		}
+	}
+
+	if (!setCode.empty() && setCode.count(AckItem.strStockCode) == 0)
+	{
+		return false;
+	}
+
+	if (!setStockType.empty() && setStockType.count(PluginSecurity_All) == 0 && m_pQuoteData)
+	{
+		INT64 nStockID = m_pQuoteData->GetStockHashVal(AckItem.strStockCode.c_str(), StockMkt_US);
+		StockMktType eMkt = StockMkt_None;
+		wchar_t szStockCode[16] = {};
+		wchar_t szStockName[128] = {};
+		int nSecurityType = 0;
+		if (m_pQuoteData->GetStockInfoByHashVal(nStockID, eMkt, szStockCode, szStockName,
+			NULL, &nSecurityType, NULL, NULL))
+		{
+			if (setStockType.count(nSecurityType) == 0)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
 }

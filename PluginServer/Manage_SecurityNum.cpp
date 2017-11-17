@@ -56,7 +56,21 @@ void Manage_SecurityNum::AddSafeSocket(const UINT32 &nCookie)
 	{
 		if (iter_find->first == nCookie)
 		{
-			m_vtSocket.push_back(iter_find->second);
+			SOCKET sock = iter_find->second;
+			if (std::find(m_vtSocket.begin(), m_vtSocket.end(), sock) == m_vtSocket.end())
+			{
+				m_vtSocket.push_back(iter_find->second);
+			}
 		}
 	}
+}
+
+bool Manage_SecurityNum::GetSocketByCookie(UINT32 nCookie, SOCKET &sock)
+{
+	if (m_mapCookieSocket.count(nCookie) != 0)
+	{
+		sock = m_mapCookieSocket[nCookie];
+		return true;
+	}
+	return false;
 }

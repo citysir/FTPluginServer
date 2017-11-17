@@ -180,10 +180,12 @@ bool CPluginGlobalState::DoFillAckDataBody(QuoteAckDataBody& ackBody)
 	ackBody.nMarketStateSH = stState.eMktSH;
 	ackBody.nMarketStateSZ = stState.eMktSZ;
 	ackBody.nMarketStateUS = stState.eMktUS;
-	
+
 	ackBody.nQuoteLogined = stState.bQuoteSvrLogined;
 	ackBody.nTradeLogined = stState.bTradeSvrLogined;
-	 
+
+	ackBody.nSvrTimeStamp = stState.nSvrTimeStamp;
+
 	return true;
 }
 

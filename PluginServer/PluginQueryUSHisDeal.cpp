@@ -1,0 +1,393 @@
+#include "stdafx.h"
+#include "PluginQueryUSHisDeal.h"
+#include "PluginUSTradeServer.h"
+#include "Protocol/ProtoQueryUSHisDeal.h"
+#include "IManage_SecurityNum.h"
+#include "CM/ca_api.h"
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#endif
+
+#define TIMER_ID_HANDLE_TIMEOUT_REQ	355
+#define EVENT_ID_ACK_REQUEST		368
+
+//tomodify 2
+#define PROTO_ID_QUOTE			PROTO_ID_TDUS_QUERY_HIS_DEAL
+typedef CProtoQueryUSHisDeal	CProtoQuote;
+
+//////////////////////////////////////////////////////////////////////////
+CPluginQueryUSHisDeal::CPluginQueryUSHisDeal()
+{	
+	m_pTradeOp = NULL;
+	m_pTradeServer = NULL;
+	m_bStartTimerHandleTimeout = FALSE;
+}
+
+CPluginQueryUSHisDeal::~CPluginQueryUSHisDeal()
+{
+	Uninit();
+}
+
+void CPluginQueryUSHisDeal::Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  pTradeOp)
+{
+	if ( m_pTradeServer != NULL )
+		return;
+
+	if ( pTradeServer == NULL || pTradeOp == NULL )
+	{
+		ASSERT(false);
+		return;
+	}
+
+	m_pTradeServer = pTradeServer;
+	m_pTradeOp = pTradeOp;
+	m_TimerWnd.SetEventInterface(this);
+	m_TimerWnd.Create();
+
+	m_MsgHandler.SetEventInterface(this);
+	m_MsgHandler.Create();
+}
+
+void CPluginQueryUSHisDeal::Uninit()
+{
+	if ( m_pTradeServer != NULL )
+	{
+		m_pTradeServer = NULL;
+		m_pTradeOp = NULL;
+
+		m_TimerWnd.Destroy();
+		m_TimerWnd.SetEventInterface(NULL);
+
+		m_MsgHandler.Close();
+		m_MsgHandler.SetEventInterface(NULL);
+
+		ClearAllReqAckData();
+	}
+}
+
+void CPluginQueryUSHisDeal::SetTradeReqData(int nCmdID, const Json::Value &jsnVal, SOCKET sock)
+{
+	CHECK_RET(nCmdID == PROTO_ID_QUOTE && sock != INVALID_SOCKET, NORET);
+	CHECK_RET(m_pTradeOp && m_pTradeServer, NORET);
+	
+	CProtoQuote proto;
+	CProtoQuote::ProtoReqDataType	req;
+	proto.SetProtoData_Req(&req);
+	if ( !proto.ParseJson_Req(jsnVal) )
+	{
+		CHECK_OP(false, NORET);
+		TradeAckType ack;
+		ack.head = req.head;
+		ack.head.ddwErrCode = PROTO_ERR_PARAM_ERR;
+		CA::Unicode2UTF(L"参数错误！", ack.head.strErrDesc);
+		ack.body.nCookie = req.body.nCookie;
+		HandleTradeAck(&ack, sock);
+		return;
+	}
+
+	if (!IManage_SecurityNum::IsSafeSocket(sock))
+	{
+		CHECK_OP(false, NORET);
+		TradeAckType ack;
+		ack.head = req.head;
+		ack.head.ddwErrCode = PROTO_ERR_UNKNOWN_ERROR;
+		CA::Unicode2UTF(L"请重新解锁！", ack.head.strErrDesc);
+		ack.body.nCookie = req.body.nCookie;
+		HandleTradeAck(&ack, sock);
+		return;
+	}
+
+	CHECK_RET(req.head.nProtoID == nCmdID && req.body.nCookie, NORET);
+
+	StockDataReq *pReq = new StockDataReq;
+	CHECK_RET(pReq, NORET);
+	pReq->sock = sock;
+	pReq->dwReqTick = ::GetTickCount();
+	pReq->req = req;	
+	
+	m_vtReqData.push_back(pReq);
+
+	//tomodify 3
+	QueryUSHisDealReqBody &body = req.body;	
+	wstring strStartDate, strEndDate;
+	CA::UTF2Unicode(body.strStartDate.c_str(), strStartDate);
+	CA::UTF2Unicode(body.strEndDate.c_str(), strEndDate);
+	int nReqResult = 0;
+	bool bRet = m_pTradeOp->QueryHisDealList((UINT32*)&pReq->dwLocalCookie, strStartDate.c_str(), strEndDate.c_str(), &nReqResult);
+
+	if ( !bRet )
+	{
+		TradeAckType ack;
+		ack.head = req.head;
+		if (nReqResult != 0)
+		{
+			ack.head.ddwErrCode = UtilPlugin::ConvertErrCode((QueryDataErrCode)nReqResult);
+			ack.head.strErrDesc = UtilPlugin::GetErrStrByCode((QueryDataErrCode)nReqResult);
+		}
+		else
+		{
+			ack.head.ddwErrCode = PROTO_ERR_UNKNOWN_ERROR;
+			CA::Unicode2UTF(L"发送失败", ack.head.strErrDesc);
+		}
+
+		memset(&ack.body, 0, sizeof(ack.body));
+		ack.body.nEnvType = body.nEnvType;
+		ack.body.nCookie = body.nCookie;		
+		HandleTradeAck(&ack, sock);
+
+		DoDeleteReqData(pReq);
+
+		return;
+	}
+	SetTimerHandleTimeout(true);
+}
+
+bool CPluginQueryUSHisDeal::DoDeleteReqData(StockDataReq* pReq)
+{
+	VT_REQ_TRADE_DATA::iterator it = m_vtReqData.begin();
+	while (it != m_vtReqData.end())
+	{
+		if (*it  == pReq)
+		{ 
+			SAFE_DELETE(pReq);
+			it = m_vtReqData.erase(it);
+			return true; 
+		}
+		++it;
+	}
+	return false;
+}
+
+void CPluginQueryUSHisDeal::NotifyOnQueryUSHisDeal(Trade_Env enEnv, UINT32 nCookie, INT32 nCount, const Trade_DealItem* pArrDeal)
+{
+	CHECK_RET(nCookie, NORET);
+	CHECK_RET(m_pTradeOp && m_pTradeServer, NORET);
+
+	VT_REQ_TRADE_DATA::iterator itReq = m_vtReqData.begin();
+	StockDataReq *pFindReq = NULL;
+	for ( ; itReq != m_vtReqData.end(); ++itReq )
+	{
+		StockDataReq *pReq = *itReq;
+		CHECK_OP(pReq, continue);
+		if ( pReq->dwLocalCookie == nCookie )
+		{
+			pFindReq = pReq;
+			break;
+		}
+	}
+	if (!pFindReq)
+		return;
+
+	TradeAckType ack;
+	ack.head = pFindReq->req.head;
+	ack.head.ddwErrCode = PROTO_ERR_NO_ERROR;
+
+	//tomodify 4
+	ack.body.nEnvType = enEnv;
+	ack.body.nCookie = pFindReq->req.body.nCookie;
+
+	std::set<int> setStatus;
+	std::set<std::wstring> setCode;
+	DoGetFilterCode(pFindReq->req.body.strStockCode, setCode);
+
+	if ( nCount > 0 && pArrDeal )
+	{
+		for ( int n = 0; n < nCount; n++ )
+		{			
+			const Trade_DealItem &deal = pArrDeal[n];
+			QueryUSHisDealAckItem item;
+			item.nOrderID = deal.nOrderID;
+			item.nDealID = deal.nDealID;
+			item.enSide = deal.enSide;
+			item.strStockCode = deal.szCode;
+			item.strStockName = deal.szName;
+			item.nPrice = deal.nPrice;
+			item.nQty = deal.nQty;
+			item.nTime = deal.nTime;
+
+			if (IsFitFilter(item, setCode))
+			{
+				ack.body.vtHisDeal.push_back(item);
+			}
+		}
+	}
+	
+	HandleTradeAck(&ack, pFindReq->sock);
+
+	m_vtReqData.erase(itReq);
+	delete pFindReq;
+}
+
+void CPluginQueryUSHisDeal::NotifySocketClosed(SOCKET sock)
+{
+	DoClearReqInfo(sock);
+}
+
+void CPluginQueryUSHisDeal::OnTimeEvent(UINT nEventID)
+{
+	if ( TIMER_ID_HANDLE_TIMEOUT_REQ == nEventID )
+	{
+		HandleTimeoutReq();
+	}
+}
+
+void CPluginQueryUSHisDeal::OnMsgEvent(int nEvent,WPARAM wParam,LPARAM lParam)
+{
+	if ( EVENT_ID_ACK_REQUEST == nEvent )
+	{		
+	}	
+}
+
+void CPluginQueryUSHisDeal::HandleTimeoutReq()
+{
+	if ( m_vtReqData.empty() )
+	{
+		SetTimerHandleTimeout(false);
+		return;
+	}
+
+	DWORD dwTickNow = ::GetTickCount();	
+	VT_REQ_TRADE_DATA::iterator it_req = m_vtReqData.begin();
+	for ( ; it_req != m_vtReqData.end(); )
+	{
+		StockDataReq *pReq = *it_req;	
+		if ( pReq == NULL )
+		{
+			CHECK_OP(false, NOOP);
+			++it_req;
+			continue;
+		}		
+
+		if ( int(dwTickNow - pReq->dwReqTick) > 8000 )
+		{
+			TradeAckType ack;
+			ack.head = pReq->req.head;
+			ack.head.ddwErrCode= PROTO_ERR_SERVER_TIMEROUT;
+			CA::Unicode2UTF(L"协议超时", ack.head.strErrDesc);
+
+			//tomodify 5
+			memset(&ack.body, 0, sizeof(ack.body));
+			ack.body.nEnvType = pReq->req.body.nEnvType;
+			ack.body.nCookie = pReq->req.body.nCookie;
+			
+			HandleTradeAck(&ack, pReq->sock);
+			
+			it_req = m_vtReqData.erase(it_req);
+			delete pReq;
+		}
+		else
+		{
+			++it_req;
+		}
+	}
+
+	if ( m_vtReqData.empty() )
+	{
+		SetTimerHandleTimeout(false);
+		return;
+	}
+}
+
+void CPluginQueryUSHisDeal::HandleTradeAck(TradeAckType *pAck, SOCKET sock)
+{
+	CHECK_RET(pAck && pAck->body.nCookie && sock != INVALID_SOCKET, NORET);
+	CHECK_RET(m_pTradeServer, NORET);
+
+	CProtoQuote proto;
+	proto.SetProtoData_Ack(pAck);
+
+	Json::Value jsnValue;
+	bool bRet = proto.MakeJson_Ack(jsnValue);
+	CHECK_RET(bRet, NORET);
+	
+	std::string strBuf;
+	CProtoParseBase::ConvJson2String(jsnValue, strBuf, true);
+	m_pTradeServer->ReplyTradeReq(PROTO_ID_QUOTE, strBuf.c_str(), (int)strBuf.size(), sock);
+}
+
+void CPluginQueryUSHisDeal::SetTimerHandleTimeout(bool bStartOrStop)
+{
+	if ( m_bStartTimerHandleTimeout )
+	{
+		if ( !bStartOrStop )
+		{			
+			m_TimerWnd.StopTimer(TIMER_ID_HANDLE_TIMEOUT_REQ);
+			m_bStartTimerHandleTimeout = FALSE;
+		}
+	}
+	else
+	{
+		if ( bStartOrStop )
+		{
+			m_TimerWnd.StartMillionTimer(500, TIMER_ID_HANDLE_TIMEOUT_REQ);
+			m_bStartTimerHandleTimeout = TRUE;
+		}
+	}
+}
+
+void CPluginQueryUSHisDeal::ClearAllReqAckData()
+{
+	VT_REQ_TRADE_DATA::iterator it_req = m_vtReqData.begin();
+	for ( ; it_req != m_vtReqData.end(); )
+	{
+		StockDataReq *pReq = *it_req;
+		delete pReq;
+	}
+
+	m_vtReqData.clear();
+}
+
+void CPluginQueryUSHisDeal::DoClearReqInfo(SOCKET socket)
+{
+	VT_REQ_TRADE_DATA& vtReq = m_vtReqData;
+
+	//清掉socket对应的请求信息
+	auto itReq = vtReq.begin();
+	while (itReq != vtReq.end())
+	{
+		if (*itReq && (*itReq)->sock == socket)
+		{
+			delete *itReq;
+			itReq = vtReq.erase(itReq);
+		}
+		else
+		{
+			++itReq;
+		}
+	}
+}
+
+void CPluginQueryUSHisDeal::DoGetFilterCode(const std::string& strFilter, std::set<std::wstring>& setCode)
+{
+	setCode.clear();
+	if (strFilter.empty())
+	{
+		return;
+	}
+	setCode.insert(L"");//防止当作没有限制,添加空不影响筛选结果
+
+	CString strDiv = _T(",");
+	std::vector<CString> vtFilterStr;
+	std::wstring wstrFilter;
+	CA::UTF2Unicode(strFilter.c_str(), wstrFilter);
+	CA::DivStr(wstrFilter.c_str(), strDiv, vtFilterStr);
+	for (auto iter = vtFilterStr.begin(); iter != vtFilterStr.end(); ++iter)
+	{
+		iter->TrimLeft();
+		iter->TrimRight();
+
+		std::wstring wstrCode = iter->GetString();
+		setCode.insert(wstrCode);
+	}
+}
+
+bool CPluginQueryUSHisDeal::IsFitFilter(const TradeAckItemType& AckItem, const std::set<std::wstring>& vtCode)
+{
+	if (!vtCode.empty() && vtCode.count(AckItem.strStockCode) == 0)
+	{
+		return false;
+	}
+
+	return true;
+}

@@ -52,6 +52,8 @@ enum QueryDataErrCode
 	QueryData_FailFreqLimit = 7,	//查询频率限制导致失败
 	QueryData_FailNetwork = 8,		//网络异常，发送失败
 	QueryData_FailErrParam = 9,		//参数错误
+
+	QueryData_FailErrNotPermit = 10, //操作不允许，如特定状态的订单不允许改单 
 };
 
 enum StockSubType
@@ -487,10 +489,13 @@ typedef struct tagNNGlobalState
 	FT_MARKET_STATUS eMktSH;
 	FT_MARKET_STATUS eMktSZ;
 
+	UINT64 nSvrTimeStamp;
+
 	tagNNGlobalState()
 	{
 		bQuoteSvrLogined = false;
 		bTradeSvrLogined = false;
+		nSvrTimeStamp = 0;
 
 		eMktHK = FT_MARKET_STATUS_NONE;
 		eMktHKFuture = FT_MARKET_STATUS_NONE;

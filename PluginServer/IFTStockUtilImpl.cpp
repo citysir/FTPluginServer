@@ -20,6 +20,8 @@ void IFTStockUtilImpl::Init(IFTQuoteData* pQuoteData)
 	CA::CAutoLock<CA::CCriticalSection> lock(&m_safe);
 
 	m_pFTQuoteData = pQuoteData;
+
+	InitMktSuffixMap();
 }
 
 bool IFTStockUtilImpl::GetStockMktCode(INT64 nStockID, StockMktCodeEx& stMktCode)
@@ -68,6 +70,19 @@ int IFTStockUtilImpl::GetStockLotsize(INT64 nStockID, bool* pRet)
 	}
 	return nLotsize;
 }
+
+StockMktType IFTStockUtilImpl::GetStockMktType(const char* pstrMktSuffix)
+{
+	std::string strMktSuffix(pstrMktSuffix);
+	
+	if (m_mapMktSuffix.count(strMktSuffix) == 0)
+	{
+		return StockMkt_None;
+	}
+
+	return m_mapMktSuffix[strMktSuffix];
+}
+
 
 void IFTStockUtilImpl::Uninit()
 {
@@ -214,4 +229,34 @@ void IFTStockUtilImpl::DoClearAllData()
 	m_vtCacheData.clear();
 	m_mapStockMktCode.clear();
 	m_mapStockID.clear();
+}
+
+void IFTStockUtilImpl::InitMktSuffixMap()
+{
+	m_mapMktSuffix.clear();
+
+	m_mapMktSuffix["HK"] = StockMkt_HK;
+	
+	m_mapMktSuffix["NYSE"] = StockMkt_US;
+	m_mapMktSuffix["Nasdaq"] = StockMkt_US;
+	m_mapMktSuffix["AMEX"] = StockMkt_US;
+	m_mapMktSuffix["PINK"] = StockMkt_US;
+	m_mapMktSuffix["CVE"] = StockMkt_US;
+	m_mapMktSuffix["INDEXEURO"] = StockMkt_US;
+	m_mapMktSuffix["LON"] = StockMkt_US;
+	m_mapMktSuffix["MUTF"] = StockMkt_US;
+	m_mapMktSuffix["OTC"] = StockMkt_US;
+	m_mapMktSuffix["OTCM"] = StockMkt_US;
+	m_mapMktSuffix["OTCB"] = StockMkt_US;
+	m_mapMktSuffix["PREIPO"] = StockMkt_US;
+	m_mapMktSuffix["TSE"] = StockMkt_US;
+	m_mapMktSuffix["US"] = StockMkt_US;
+	m_mapMktSuffix["INDEXASX"] = StockMkt_US;
+	m_mapMktSuffix["SL"] = StockMkt_US;
+	m_mapMktSuffix["UHK"] = StockMkt_US;
+	m_mapMktSuffix["BB"] = StockMkt_US;
+	m_mapMktSuffix["BATS"] = StockMkt_US;
+
+	m_mapMktSuffix["SZ"] = StockMkt_SZ;
+	m_mapMktSuffix["SH"] = StockMkt_SH;
 }

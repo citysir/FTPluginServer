@@ -123,9 +123,9 @@ void CPluginGearPrice::SetQuoteReqData(int nCmdID, const Json::Value &jsnVal, SO
 		{
 			//tomodify 3.1
 			Quote_OrderItem price[10];
+			QuoteAckDataBody &ack = m_mapCacheData[nStockID];
 			if ( m_pQuoteData->FillOrderQueue(nStockID, price, _countof(price)) )
-			{
-				QuoteAckDataBody &ack = m_mapCacheData[nStockID];
+			{			
 				for ( int n = 0; n < _countof(price); n++ )
 				{
 					GearPriceAckItem item;

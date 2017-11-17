@@ -47,6 +47,11 @@ public:
 	static INT64 GetStockHashVal(const char* pstrCode, StockMktType eMktType);
 	static INT64 GetStockHashVal(const wchar_t* pwstrCode, StockMktType eMktType);
 
+	//通过前后缀分辩市场
+	//注意期货市场无法通过该前后缀分辨
+	static StockMktType GetStockMktType(const char* pstrMktSuffix);
+	static StockMktType GetStockMktType(const wchar_t* pwstrMktSuffix);
+
 	static void Uninit();
 
 private:

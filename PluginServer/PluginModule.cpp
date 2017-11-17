@@ -87,6 +87,7 @@ void CPluginModule::Uninit()
 		m_pPluginCore = NULL;
 		m_QuoteServer.UninitQuoteSvr();
 		m_HKTradeServer.UninitTradeSvr();
+		m_USTradeServer.UninitTradeSvr();
 
 		m_Network.UninitNetwork();		
 		m_MsgHandler.Close();
