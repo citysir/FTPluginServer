@@ -2,21 +2,21 @@
 #include "ProtoDataStruct_Quote.h"
 #include "ProtoParseBase.h"
 
-class CProtoHistoryKL : public CProtoParseBase
+class CProtoSwitchUser : public CProtoParseBase
 {
 public:
 	//tomodify 1
-	typedef HistoryKL_Req		ProtoReqDataType;
-	typedef HistoryKL_Ack		ProtoAckDataType;
+	typedef SwitchUser_Req		ProtoReqDataType;
+	typedef SwitchUser_Ack		ProtoAckDataType;
 
 	//tomodify 2
-	typedef HistoryKLReqBody	ProtoReqBodyType;
-	typedef HistoryKLAckBody	ProtoAckBodyType;
+	typedef SwitchUserReqBody	   ProtoReqBodyType;
+	typedef SwitchUserAckBody	   ProtoAckBodyType;
 
 
 public:
-	CProtoHistoryKL();
-	virtual ~CProtoHistoryKL();
+	CProtoSwitchUser();
+	virtual ~CProtoSwitchUser();
 
 	virtual bool ParseJson_Req(const Json::Value &jsnVal);
 	virtual bool ParseJson_Ack(const Json::Value &jsnVal);
@@ -25,25 +25,17 @@ public:
 
 	void	SetProtoData_Req(ProtoReqDataType *pData);
 	void	SetProtoData_Ack(ProtoAckDataType *pData);
-	void	SetHistoryKLArrFieldFilter(std::set<KLDataField> setFilter);
-
-private:	
+		
+private:
 	bool ParseProtoBody_Req(const Json::Value &jsnVal, ProtoReqDataType &data);
 	bool ParseProtoBody_Ack(const Json::Value &jsnVal, ProtoAckDataType &data);
 	bool MakeProtoBody_Req(Json::Value &jsnVal, const ProtoReqDataType &data); 
 	bool MakeProtoBody_Ack(Json::Value &jsnVal, const ProtoAckDataType &data);
-
+	
 	void GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const ProtoReqBodyType &reqData);
 	void GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const ProtoAckBodyType &ackData);
 
 private:
-	//½âÎöHistoryKLÊý×é
-	bool ParseHistoryKLArr(const Json::Value &jsnRetData, ProtoAckBodyType &data);
-	bool MakeHistoryKLArr(Json::Value &jsnRetData, const ProtoAckBodyType &data);
-	void GetHistoryKLArrField(VT_PROTO_FIELD &vtField, const HistoryKLAckItem &ackItem);
-
-private:
 	ProtoReqDataType	*m_pReqData;
 	ProtoAckDataType	*m_pAckData;
-	std::set<KLDataField> m_setFieldFilter;
 };

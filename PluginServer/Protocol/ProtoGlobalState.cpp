@@ -221,26 +221,26 @@ void CProtoGlobalState::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Pro
 		FALSE, FALSE,  FALSE,
 		FALSE, FALSE, 
 		FALSE, FALSE, 
-		FALSE,
+		FALSE, FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 		ProtoFild_Int32, ProtoFild_Int32,
 		ProtoFild_Int32, ProtoFild_Int32,
-		ProtoFild_Int64
+		ProtoFild_Int64, ProtoFild_StringW,
 	};
 	static LPCSTR arFieldKey[] = {		
 		"Market_HK", "Market_US", "Market_SH",
 		"Market_SZ", "Market_HKFuture",
 		"Quote_Logined", "Trade_Logined",
-		"TimeStamp",
+		"TimeStamp", "Version",
 	};
 
 	ProtoAckBodyType &body = const_cast<ProtoAckBodyType &>(ackData);
 	void *arPtr[] = {
 		&body.nMarketStateHK, &body.nMarketStateUS, &body.nMarketStateSH, 
 		&body.nMarketStateSZ, &body.nMarketStateHKFuture, 
-		&body.nQuoteLogined, &body.nTradeLogined, &body.nSvrTimeStamp,
+		&body.nQuoteLogined, &body.nTradeLogined, &body.nSvrTimeStamp, &body.wstrVer,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);

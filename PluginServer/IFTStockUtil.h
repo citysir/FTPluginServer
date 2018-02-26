@@ -29,7 +29,14 @@ struct StockMktCodeEx
 	}
 	bool operator < (const StockMktCodeEx& stVal) const
 	{
-		return  strncmp(strCode, stVal.strCode, _countof(strCode)) < 0;
+		if (strncmp(strCode, stVal.strCode, _countof(strCode)) == 0)
+		{
+			return eMarketType < stVal.eMarketType;
+		}
+		else
+		{
+			return  strncmp(strCode, stVal.strCode, _countof(strCode)) < 0;
+		}
 	}
 };
 

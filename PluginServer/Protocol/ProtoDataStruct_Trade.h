@@ -40,6 +40,14 @@ struct	OrderErrorPushHK_Ack
 };
 
 
+// 下单的价格作调整模式
+enum PlaceOrderPriceRegularMode
+{
+	PlaceOrder_PriceRegularMode_None = 0,   //不调整
+	PlaceOrder_PriceRegularMode_Upper = 1,  //价位表向上取值,若符合价表就不调整
+	PlaceOrder_PriceRegularMode_Lower = 2,  //价位表向下取值,若符合价表就不调整
+};
+
 //////////////////////////////////////////////////////////////////////////
 //下订单 PROTO_ID_TDHK_PLACE_ORDER 
 struct	PlaceOrderReqBody
@@ -50,6 +58,7 @@ struct	PlaceOrderReqBody
 	int nOrderType;
 	int nPrice;
 	INT64 nQty;
+	int nPriceRegularMode;
 	std::string strCode;
 
 	PlaceOrderReqBody()
@@ -60,6 +69,7 @@ struct	PlaceOrderReqBody
 		nOrderType = 0;
 		nPrice = 0;
 		nQty = 0;
+		nPriceRegularMode = PlaceOrder_PriceRegularMode_None;
 	}
 };
 
@@ -178,6 +188,7 @@ struct UnlockTradeReqBody
 {
 	int			nCookie;
 	std::string strPasswd;
+	std::string strPasswdMD5;
 
 	UnlockTradeReqBody()
 	{

@@ -101,6 +101,11 @@ void CProtoHistoryKL::SetProtoData_Ack(ProtoAckDataType *pData)
 	m_pAckData = pData;
 }
 
+void CProtoHistoryKL::SetHistoryKLArrFieldFilter(std::set<KLDataField> setFilter)
+{
+	m_setFieldFilter = setFilter;
+}
+
 //tomodify 3(数组等复杂结构或单层的结构体)
 bool CProtoHistoryKL::ParseProtoBody_Req(const Json::Value &jsnVal, ProtoReqDataType &data)
 {	
@@ -178,20 +183,24 @@ void CProtoHistoryKL::GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const Proto
 	static BOOL arOptional[] = {
 		FALSE, FALSE, FALSE, 
 		FALSE, FALSE, FALSE,
+		TRUE, TRUE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 		ProtoFild_StringA,  ProtoFild_StringA, ProtoFild_StringA,
+		ProtoFild_Int32, ProtoFild_StringA
 	};
 	static LPCSTR arFieldKey[] = {
 		"RehabType",  "KLType",  "Market", 
-		"StockCode",  "start_date", "end_date",
+		"StockCode", "start_date", "end_date", 
+		"MaxKLNum", "NeedKLData",
 	};
 
 	ProtoReqBodyType &body = const_cast<ProtoReqBodyType &>(reqData);
 	void *arPtr[] = {
 		&body.nRehabType, &body.nKLType, &body.nStockMarket,
 		&body.strStockCode, &body.strStartDate, &body.strEndDate,
+		&body.nMaxAckKLItemNum, &body.strNeedKLData,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
@@ -234,20 +243,28 @@ void CProtoHistoryKL::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Proto
 	static BOOL arOptional[] = {
 		FALSE, FALSE, FALSE,
 		FALSE, FALSE, FALSE,
+		FALSE, FALSE, FALSE,
+		FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 		ProtoFild_StringA,	ProtoFild_StringA, ProtoFild_StringA,
+		ProtoFild_Int32, ProtoFild_StringA, ProtoFild_Int32,
+		ProtoFild_StringA,
 	};
 	static LPCSTR arFieldKey[] = {		
 		"RehabType", "KLType", "Market", 
 		"StockCode", "start_date", "end_date",
+		"HasNext", "NextKLTime", "MaxKLNum", 
+		"NeedKLData",
 	};
 
 	ProtoAckBodyType &body = const_cast<ProtoAckBodyType &>(ackData);
 	void *arPtr[] = {
 		&body.nRehabType,  &body.nKLType,  &body.nStockMarket, 
 		&body.strStockCode, &body.strStartDate, &body.strEndDate,
+		&body.nHasNext, &body.strNextKLTime, &body.nMaxAckKLItemNum,
+		&body.strNeedKLData,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
@@ -336,19 +353,26 @@ void CProtoHistoryKL::GetHistoryKLArrField(VT_PROTO_FIELD &vtField, const Histor
 		FALSE, FALSE,
 		FALSE, FALSE, FALSE,		
 		FALSE, FALSE, FALSE, 
-		FALSE,
+		FALSE, FALSE
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_StringW, ProtoFild_Int64,
 		ProtoFild_Int64, ProtoFild_Int64, ProtoFild_Int64,
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int64, 
-		ProtoFild_Int64, 
+		ProtoFild_Int64, ProtoFild_Int32,
 	};
 	static LPCSTR arFieldKey[] = {
 		"Time", "Open", 
 		"Close", "High", "Low", 
 		"PERatio", "TurnoverRate", "Volume",
-		"Turnover"
+		"Turnover", "ChangeRate",
+	};
+
+	static KLDataField arDataFidle[] = {
+		KLDataField_TimeStr, KLDataField_Open,
+		KLDataField_Close, KLDataField_Highest, KLDataField_Lowest,
+		KLDataField_PERate, KLDataField_TurnoverRate, KLDataField_TDVol,
+		KLDataField_TDVal, KLDataField_RaiseRate,
 	};
 
 	HistoryKLAckItem &item = const_cast<HistoryKLAckItem &>(ackItem);
@@ -356,17 +380,25 @@ void CProtoHistoryKL::GetHistoryKLArrField(VT_PROTO_FIELD &vtField, const Histor
 		&item.strTime,	&item.nOpenPrice,
 		&item.nClosePrice,	&item.nHighestPrice,	&item.nLowestPrice,
 		&item.nPERatio,	&item.nTurnoverRate,  &item.ddwTDVol,	
-		&item.ddwTDVal,
+		&item.ddwTDVal, &item.nRaiseRate,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
 	CHECK_OP(_countof(arOptional) == _countof(arFieldKey), NOOP);
 	CHECK_OP(_countof(arOptional) == _countof(arPtr), NOOP);
+	CHECK_OP(_countof(arOptional) == _countof(arDataFidle), NOOP);
 
 	vtField.clear();
 	PROTO_FIELD field;
 	for ( int n = 0; n < _countof(arOptional); n++ )
 	{
+		KLDataField eDataField = arDataFidle[n];
+		if (!m_setFieldFilter.empty() && 
+			m_setFieldFilter.count(eDataField) == 0)
+		{
+			continue;
+		}
+
 		field.bOptional = arOptional[n];
 		field.eFieldType = arFieldType[n];
 		field.strFieldKey = arFieldKey[n];

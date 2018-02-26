@@ -148,6 +148,7 @@
     <ClInclude Include="PluginExRightInfo.h" />
     <ClInclude Include="PluginGearPrice.h" />
     <ClInclude Include="PluginGlobalState.h" />
+    <ClInclude Include="PluginHisKLPoints.h" />
     <ClInclude Include="PluginHistoryKL.h" />
     <ClInclude Include="PluginHKTradeServer.h" />
     <ClInclude Include="PluginKLData.h" />
@@ -191,6 +192,8 @@
     <ClInclude Include="PluginStockUnSub.h" />
     <ClInclude Include="PluginSubHKOrderDeal.h" />
     <ClInclude Include="PluginSubUSOrderDeal.h" />
+    <ClInclude Include="PluginSuspend.h" />
+    <ClInclude Include="PluginSwitchUser.h" />
     <ClInclude Include="PluginTickerPrice.h" />
     <ClInclude Include="PluginTradeDate.h" />
     <ClInclude Include="PluginUnlockTrade.h" />
@@ -206,6 +209,7 @@
     <ClInclude Include="Protocol\ProtoExRightInfo.h" />
     <ClInclude Include="Protocol\ProtoGearPrice.h" />
     <ClInclude Include="Protocol\ProtoGlobalState.h" />
+    <ClInclude Include="Protocol\ProtoHisKLPoints.h" />
     <ClInclude Include="Protocol\ProtoHistoryKL.h" />
     <ClInclude Include="Protocol\ProtoKLData.h" />
     <ClInclude Include="Protocol\ProtoOrderErrorPush.h" />
@@ -245,6 +249,8 @@
     <ClInclude Include="Protocol\ProtoStockUnSub.h" />
     <ClInclude Include="Protocol\ProtoSubHKOrderDeal.h" />
     <ClInclude Include="Protocol\ProtoSubUSOrderDeal.h" />
+    <ClInclude Include="Protocol\ProtoSuspend.h" />
+    <ClInclude Include="Protocol\ProtoSwitchUser.h" />
     <ClInclude Include="Protocol\ProtoTickerPrice.h" />
     <ClInclude Include="Protocol\ProtoTradeDate.h" />
     <ClInclude Include="Protocol\ProtoUnlockTrade.h" />
@@ -303,6 +309,7 @@
     <ClCompile Include="PluginExRightInfo.cpp" />
     <ClCompile Include="PluginGearPrice.cpp" />
     <ClCompile Include="PluginGlobalState.cpp" />
+    <ClCompile Include="PluginHisKLPoints.cpp" />
     <ClCompile Include="PluginHistoryKL.cpp" />
     <ClCompile Include="PluginHKTradeServer.cpp" />
     <ClCompile Include="PluginKLData.cpp" />
@@ -346,6 +353,8 @@
     <ClCompile Include="PluginStockUnSub.cpp" />
     <ClCompile Include="PluginSubHKOrderDeal.cpp" />
     <ClCompile Include="PluginSubUSOrderDeal.cpp" />
+    <ClCompile Include="PluginSuspend.cpp" />
+    <ClCompile Include="PluginSwitchUser.cpp" />
     <ClCompile Include="PluginTickerPrice.cpp" />
     <ClCompile Include="PluginTradeDate.cpp" />
     <ClCompile Include="PluginUnlockTrade.cpp" />
@@ -359,6 +368,7 @@
     <ClCompile Include="Protocol\ProtoExRightInfo.cpp" />
     <ClCompile Include="Protocol\ProtoGearPrice.cpp" />
     <ClCompile Include="Protocol\ProtoGlobalState.cpp" />
+    <ClCompile Include="Protocol\ProtoHisKLPoints.cpp" />
     <ClCompile Include="Protocol\ProtoHistoryKL.cpp" />
     <ClCompile Include="Protocol\ProtoKLData.cpp" />
     <ClCompile Include="Protocol\ProtoOrderErrorPush.cpp" />
@@ -398,6 +408,8 @@
     <ClCompile Include="Protocol\ProtoStockUnSub.cpp" />
     <ClCompile Include="Protocol\ProtoSubHKOrderDeal.cpp" />
     <ClCompile Include="Protocol\ProtoSubUSOrderDeal.cpp" />
+    <ClCompile Include="Protocol\ProtoSuspend.cpp" />
+    <ClCompile Include="Protocol\ProtoSwitchUser.cpp" />
     <ClCompile Include="Protocol\ProtoTickerPrice.cpp" />
     <ClCompile Include="Protocol\ProtoTradeDate.cpp" />
     <ClCompile Include="Protocol\ProtoUnlockTrade.cpp" />

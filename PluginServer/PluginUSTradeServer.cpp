@@ -58,7 +58,7 @@ void CPluginUSTradeServer::InitTradeSvr(IFTPluginCore* pPluginCore, CPluginNetwo
 	m_QueryPos.Init(this, m_pTradeOp, pQuoteData);
 	m_QueryUSAcc.Init(this, m_pTradeOp);
 	m_QueryUSOrder.Init(this, m_pTradeOp);
-	m_PlaceOrder.Init(this, m_pTradeOp);
+	m_PlaceOrder.Init(this, m_pTradeOp, pQuoteData);
 	m_ChangeOrder.Init(this, m_pTradeOp);
 	m_SetOrderStatus.Init(this, m_pTradeOp);
 	m_QueryUSDeal.Init(this, m_pTradeOp);

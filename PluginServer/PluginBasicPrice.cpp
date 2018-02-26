@@ -135,7 +135,8 @@ void CPluginBasicPrice::SetQuoteReqData(int nCmdID, const Json::Value &jsnVal, S
 				ack.nTurnover = price.ddwTrunover;
 				ack.nVolume = price.ddwVolume;
 				ack.dwTime = price.dwTime;
-				ack.nLotSize = price.ddwLotSize;				
+				ack.nLotSize = price.ddwLotSize;		
+				ack.nPriceSpread = m_pQuoteData->GetStockPriceSpread(nStockID, ack.nCur);
 			}
 		}
 		else

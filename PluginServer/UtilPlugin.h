@@ -2,6 +2,8 @@
 #include "FormatTime.h"
 #include "Include/FTPluginQuoteDefine.h"
 #include "Protocol/ProtoDataStruct.h"
+#include "Protocol/ProtoDataStruct_Trade.h"
+#include "include/FTPluginQuoteInterface.h"
 
 class UtilPlugin
 {
@@ -12,4 +14,6 @@ public:
 
 	static std::string GetErrStrByCode(QueryDataErrCode eCode);
 	static ProtoErrCode ConvertErrCode(QueryDataErrCode eCode);
+
+	static DWORD  PlaceOrderRegularPrice(INT64 nStockID, DWORD dwPrice, PlaceOrderPriceRegularMode eMode, IFTQuoteData* pQuoteData);
 };

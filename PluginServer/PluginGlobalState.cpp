@@ -186,6 +186,10 @@ bool CPluginGlobalState::DoFillAckDataBody(QuoteAckDataBody& ackBody)
 
 	ackBody.nSvrTimeStamp = stState.nSvrTimeStamp;
 
+	CString strVer;
+	strVer.Format(_T("%d.%d.%d"), stState.nVerMain, stState.nVerSub, stState.nVerBuild);
+	ackBody.wstrVer = strVer;
+
 	return true;
 }
 
@@ -204,11 +208,7 @@ void CPluginGlobalState::ReplyAllReadyReq()
 		CProtoQuote::ProtoReqBodyType &reqBody = pReqData->req.body;
 		QuoteAckDataBody ackBody;
 
-		if (!DoFillAckDataBody(ackBody))
-		{
-			continue;
-		}
-
+		DoFillAckDataBody(ackBody);
 		ReplyStockDataReq(pReqData, ackBody);
 
 		it = vtReqData.erase(it);

@@ -248,6 +248,7 @@ void CProtoPushBatchBasic::GetAckBatchBasicArrField(VT_PROTO_FIELD &vtField, con
 		FALSE, FALSE, FALSE,
 		FALSE, FALSE, FALSE,
 		FALSE, FALSE, FALSE,
+		FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32,   ProtoFild_StringA,   ProtoFild_Int32, 
@@ -255,13 +256,15 @@ void CProtoPushBatchBasic::GetAckBatchBasicArrField(VT_PROTO_FIELD &vtField, con
 		ProtoFild_Int32,   ProtoFild_Int32,     ProtoFild_Int32,
 		ProtoFild_Int64,   ProtoFild_Int64,     ProtoFild_Int64,   
 		ProtoFild_StringW, ProtoFild_StringW,   ProtoFild_StringW, 
+		ProtoFild_Int32,
 	};
 	static LPCSTR arFieldKey[] = {
 		"Market",  "StockCode",  "High", 
 		"Open",	  "LastClose",    "Low",
 		"CurPrice",	  "Suspension", "TurnoverRate",
 		"Turnover",  "Volume",   "Amplitude",     
-		"Date",	  "Time",     "ListTime", 
+		"Date", "Time", "ListTime", 
+		"PriceSpread",
 	};
 
 	PushBatchBasicAckItem &item = const_cast<PushBatchBasicAckItem &>(ackItem);
@@ -271,6 +274,7 @@ void CProtoPushBatchBasic::GetAckBatchBasicArrField(VT_PROTO_FIELD &vtField, con
 		&item.nCur,	        &item.nSuspension,  &item.nTurnoverRate,
 		&item.nValue,		&item.nVolume,		&item.nAmpli,
 		&item.strDate,      &item.strTime,	    &item.strListTime,
+		&item.nPriceSpread,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);

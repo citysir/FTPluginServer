@@ -58,7 +58,7 @@ void CPluginNetwork::UninitNetwork()
 	
 	SetEvent(m_hEvtNotifyExit);
 
-	Sleep(10);
+	Sleep(100);
 
 	DWORD dwExitCode = 0;	
 	if ( GetExitCodeThread(m_hThreadAccept, &dwExitCode) && dwExitCode == STILL_ACTIVE )
@@ -460,6 +460,7 @@ void CPluginNetwork::ClearSocketSendData(SOCKET sock)
 
 void CPluginNetwork::ClearSocketRecvData(SOCKET sock)
 {
+	CSingleLock lock(&m_csRecv, TRUE);
 	MAP_SOCK_RTINFO::iterator itRTInfo = m_mapRecvingInfo.find(sock);
 	if ( itRTInfo != m_mapRecvingInfo.end() )
 	{
@@ -511,10 +512,11 @@ void CPluginNetwork::ClearSockRTInfo(MAP_SOCK_RTINFO &mapRTInfo)
 	MAP_SOCK_RTINFO::iterator it = mapRTInfo.begin();
 	for ( ; it != mapRTInfo.end(); ++it )
 	{
-		SockRuntimeInfo *pRTInfo = it->second;
+		SockRuntimeInfo* &pRTInfo = it->second;
 		CHECK_OP(pRTInfo, continue);
 		WSACloseEvent(pRTInfo->hEventHandle);
 		delete pRTInfo;
+		pRTInfo = NULL;
 	}
 
 	mapRTInfo.clear();
@@ -536,10 +538,11 @@ void CPluginNetwork::ClearSockTransData(MAP_SOCK_TRANS_DATA &mapTransData)
 		VT_TRANS_DATA::iterator itData = vtData.begin();
 		for ( ; itData != vtData.end(); ++itData )
 		{
-			TransDataInfo *pData = *itData;
+			TransDataInfo* &pData = *itData;
 			CHECK_OP(pData, continue);
 			delete []pData->buffer.buf;
 			delete pData;
+			pData = NULL;
 		}
 
 		vtData.clear();

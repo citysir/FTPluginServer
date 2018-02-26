@@ -28,6 +28,9 @@
 #include "PluginPlateSubIDs.h"
 #include "PluginBrokerQueue.h"
 #include "PluginGlobalState.h"
+#include "PluginSwitchUser.h"
+#include "PluginHisKLPoints.h"
+#include "PluginSuspend.h"
 
 class CPluginNetwork;
 
@@ -84,6 +87,7 @@ public:
 
 	QueryDataErrCode QueryPlatesetSubIDList(DWORD* pdwCookie, INT64 nPlatesetID);
 	QueryDataErrCode QueryPlateSubIDList(DWORD* pdwCookie, INT64 nPlateID);
+	QueryDataErrCode QueryBatchHisKLPoints(INT64 *parnStockID, int nStockNum, LPCWSTR *parTimePoints, int nTimeNum, int nKLType, int nRehabType, NoDataMode eNodataMode, int nMaxKLItenNum, DWORD& dwCookie);
 
 protected:
 	//IQuoteInfoCallback
@@ -110,6 +114,9 @@ protected:
 	//板块请求
 	virtual void  OnReqPlatesetIDs(int nCSResult, DWORD dwCookie);
 	virtual void  OnReqPlateStockIDs(int nCSResult, DWORD dwCookie);
+
+	//请求历史K线多点返回
+	virtual void  OnReqBatchHisKLPoints(DWORD dwCookie, Quote_StockKLData *arStockKLData, int Num);
 
 	//CTimerWndInterface
 	virtual void OnTimeEvent(UINT nEventID);
@@ -160,6 +167,11 @@ protected:
 	CPluginPlateSubIDs  m_plateSubIDs;
 	CPluginBrokerQueue  m_BrokerQueue;
 	CPluginGlobalState	m_GlobalState;
+
+	CPluginSwitchUser	m_SwitchUser;
+
+	CPluginHisKLPoints  m_HisKLPoints;
+	CPluginSuspend		m_Suspend;
 
 	CTimerMsgWndEx m_TimerWnd;
 	UINT m_nTimerIDRefreshRTKL;

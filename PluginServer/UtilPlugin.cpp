@@ -136,3 +136,42 @@ ProtoErrCode UtilPlugin::ConvertErrCode(QueryDataErrCode eCode)
 	}
 	return eRet;
 }
+
+DWORD  UtilPlugin::PlaceOrderRegularPrice(INT64 nStockID, DWORD dwPrice, PlaceOrderPriceRegularMode eMode, IFTQuoteData* pQuoteData)
+{
+	DWORD dwRet = dwPrice;
+	if (PlaceOrder_PriceRegularMode_None == eMode)
+	{
+		return dwRet;
+	}
+	if (eMode != PlaceOrder_PriceRegularMode_Upper && eMode != PlaceOrder_PriceRegularMode_Lower)
+	{
+		CHECK_RET(FALSE, dwRet);
+	}
+	CHECK_RET(pQuoteData, dwRet);
+
+	DWORD dwSpread = pQuoteData->GetStockPriceSpread(nStockID, dwPrice, true);
+	if (0 == dwSpread)
+	{
+		return dwRet;
+	}
+
+	dwRet = (dwPrice + dwSpread - 1) / dwSpread * dwSpread;
+	
+	if (dwRet != dwPrice)
+	{
+		if (PlaceOrder_PriceRegularMode_Upper == eMode)
+		{
+			// do none 
+		}
+		else if (PlaceOrder_PriceRegularMode_Lower == eMode)
+		{
+			dwRet -= dwSpread;
+		}
+		else
+		{
+			CHECK_OP(FALSE, NOOP);
+		}
+	}
+	return dwRet;
+}

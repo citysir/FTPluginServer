@@ -223,10 +223,10 @@ interface ITrade_HK
 
 	* @param pCookie 接收本次调用对应的Cookie值，用于服务器返回时做对应关系判断.
 	* @param lpszPassword 密码.
-
+	* @param lpszPasswordMD5 密码MD5加密16进制表示
 	* @return true发送成功，false发送失败.
 	*/
-	virtual bool UnlockTrade(UINT32* pCookie, LPCWSTR lpszPassword) = 0;
+	virtual bool UnlockTrade(UINT32* pCookie, LPCWSTR lpszPassword, LPCWSTR lpszPasswordMD5) = 0;
 
 	/**
 	* 下单

@@ -41,8 +41,11 @@ interface IFTQuoteOperation
 	//请求板块及板块集合的列表
 	virtual QueryDataErrCode QueryPlatesetSubIDList(const GUID &guidPlugin, INT64 nPlatesetID, DWORD& dwCookie) = 0;
 	virtual QueryDataErrCode QueryPlateStockIDList(const GUID &guidPlugin, INT64 nPlateID, DWORD& dwCookie) = 0;
-};
 
+	virtual void SwitchUser(UINT64 nUserID, LPCSTR pszPasswordMD5) = 0;
+
+	virtual QueryDataErrCode QueryBatchHisKLPoints(const GUID &guidPlugin, INT64 *parnStockID, int nStockNum, LPCWSTR *parTimePoints, int nTimeNum, int nKLType, int nRehabType, NoDataMode eNodataMode, int nMaxKLItenNum,DWORD& dwCookie) = 0;
+};
 
 /**
 *	行情数据接口 IFTQuoteData，插件宿主实现，通过查询IFTPluginCore::QueryFTInterface得到
@@ -135,8 +138,21 @@ interface IFTQuoteData
 	//得到历史K线 
 	//返回值： 如果参数错误或者数据未下载，则返回false；返回的数量满足或不足都返回true
 	//pszDateTimeFrom,pszDateTimeTo: 不能为null, 日期字符串格式为YYYY-MM-DD HH:MM:SS
-	virtual bool  GetHistoryKLineTimeStr(StockMktType mkt, INT64 ddwStockHash, int nKLType, int nRehabType, LPCWSTR pszDateTimeFrom, LPCWSTR pszDateTimeTo, Quote_StockKLData* &arKLData, int &nKLNum) = 0;
-	virtual bool  GetHistoryKLineTimestamp(StockMktType mkt, INT64 ddwStockHash, int nKLType, int nRehabType, INT64 nTimestampFrom, INT64 nTimestampTo, Quote_StockKLData *&arKLData, int &nKLNum) = 0;
+	virtual bool  GetHistoryKLineTimeStr(StockMktType mkt, INT64 ddwStockHash, int nKLType, int nRehabType, LPCWSTR pszDateTimeFrom, LPCWSTR pszDateTimeTo, int nMaxKLItemNum, 
+		BOOL &bHasNext, UINT64 &nNextDate, Quote_StockKLData* &arKLData, int &nKLNum) = 0;
+	virtual bool GetHistoryKLineTimestamp(StockMktType mkt, INT64 ddwStockHash, int nKLType, int nRehabType, INT64 nTimestampFrom, INT64 nTimestampTo, int nMaxKLItemNum,
+		BOOL &bHasNext, UINT64 &nNextDate, Quote_StockKLData *&arKLData, int &nKLNum) = 0;
+
+	/**
+	* 得到停牌日列表
+	* @pszDateFrom: "YYYY-MM-DD"格式，为NULL则默认为1970
+	* @pszDateTo: "YYYY-MM-DD"格式，为NULL则默认为当前日历时间
+	* @nDateArr:  返回YYYYMMDD格式的整数日期数组，接收方必须将返回的数据copy一份保存起来
+	* @nDateLen:  nDateArr数组长度
+	* @return:    返回true或false表示成功或失败，注意即使成功nDateLen也有可能为0
+	*/
+	virtual bool GetSuspendDateList(INT64 ddwStockHash, LPCWSTR pszDateTimeFrom, LPCWSTR pszDateTimeTo, INT64* &narDateArr, int &nDateArrLen) = 0;
+	virtual bool GetSuspendDateList(INT64 ddwStockHash, INT64 nTimestampFrom, INT64 nTimestampTo, INT64* &narDateArr, int &nDateArrLen) = 0;
 
 	/**
 	* dwTime转成wstring 日期+时间
@@ -204,6 +220,16 @@ interface IFTQuoteData
 	@返回值：void 
 	*/
 	virtual void GetNNGlobalState(NNGlobalState* pState) = 0;
+
+	/**
+	* 得到股票ID 在某个价格的价差, 在交易时，价格需要是价差的整数倍 
+	@GetStockPriceSpread
+	@nStockID 
+	@dwPrice 
+	@返回值：价差
+	*/
+	virtual DWORD GetStockPriceSpread(INT64 nStockID, DWORD dwPrice, bool bPlus = true) = 0;
+
 };
 
 /**
@@ -288,6 +314,9 @@ interface IQuoteInfoCallback
 	* 维持push连接alive的心跳推送
 	*/
 	virtual void  OnPushHeartBeat(SOCKET sock, UINT64 nTimeStampNow) = 0;
+
+	//请求历史K线多点返回
+	virtual void  OnReqBatchHisKLPoints(DWORD dwCookie, Quote_StockKLData *arStockKLData, int nNum) = 0;
 };
 
 interface IQuoteKLCallback

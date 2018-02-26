@@ -16,7 +16,7 @@ public:
 	CPluginPlaceOrder_US();
 	virtual ~CPluginPlaceOrder_US();
 	
-	void Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  pTradeOp);
+	void Init(CPluginUSTradeServer* pTradeServer, ITrade_US*  pTradeOp, IFTQuoteData* pQuoteData);
 	void Uninit();	
 	void SetTradeReqData(int nCmdID, const Json::Value &jsnVal, SOCKET sock);
 	void NotifyOnPlaceOrder(Trade_Env enEnv, UINT32 nCookie, Trade_SvrResult enSvrRet, UINT64 nLocalID, INT64 nErrCode);
@@ -68,6 +68,7 @@ private:
 protected:
 	CPluginUSTradeServer	*m_pTradeServer;
 	ITrade_US				*m_pTradeOp;	
+	IFTQuoteData			*m_pQuoteData;
 	BOOL					m_bStartTimerHandleTimeout;
 	
 	CTimerMsgWndEx		m_TimerWnd;

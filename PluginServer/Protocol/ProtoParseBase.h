@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <set>
 #include "../JsonCpp/json.h"
 #include "ProtoDataStruct.h"
 

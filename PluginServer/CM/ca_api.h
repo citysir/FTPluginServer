@@ -116,6 +116,17 @@ static void  UTF2Unicode(LPCSTR pstr, std::wstring & strContext)
 	}
 }
 
+static int  WStrSafeCopy(WCHAR* pstrDest, int nDestMaxSize, const CString& strSrc)
+{
+	if (!pstrDest || nDestMaxSize <= 0)
+		return 0;
+
+	int nCpy = min(strSrc.GetLength(), nDestMaxSize - 1);
+	wcsncpy(pstrDest, T2CW((LPCTSTR)strSrc), nCpy);
+
+	pstrDest[nCpy] = 0;
+	return nCpy;
+}
 
 static CString GetMoudleFolder(HINSTANCE hInstance = NULL)
 {

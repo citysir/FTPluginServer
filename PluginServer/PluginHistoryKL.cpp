@@ -146,9 +146,12 @@ void CPluginHistoryKL::ReplyAllRequest()
 			pszDateTo = strDateTo.c_str();
 		}
 
+		BOOL bHasNext = FALSE;
+		UINT64 nNextDate = 0;
 		int nKLNum = 0;
 		Quote_StockKLData *arKLData = NULL;
-		bool bRet = m_pQuoteData->GetHistoryKLineTimeStr((StockMktType)reqBody.nStockMarket, pReqData->nStockID, reqBody.nKLType, reqBody.nRehabType, pszDateFrom, pszDateTo, arKLData, nKLNum);
+		bool bRet = m_pQuoteData->GetHistoryKLineTimeStr((StockMktType)reqBody.nStockMarket, pReqData->nStockID, reqBody.nKLType, 
+			reqBody.nRehabType, pszDateFrom, pszDateTo, reqBody.nMaxAckKLItemNum, bHasNext, nNextDate, arKLData, nKLNum);
 		if ( !bRet )
 		{
 			ReplyDataReqError(pReqData, PROTO_ERR_UNKNOWN_ERROR, L"本地无数据！");
@@ -165,6 +168,15 @@ void CPluginHistoryKL::ReplyAllRequest()
 		ackBody.strEndDate = reqBody.strEndDate;
 		ackBody.nRehabType = reqBody.nRehabType;
 		ackBody.nKLType = reqBody.nKLType;
+		ackBody.nHasNext = bHasNext;
+		ackBody.nMaxAckKLItemNum = reqBody.nMaxAckKLItemNum;
+		ackBody.strNeedKLData = reqBody.strNeedKLData;
+		if (bHasNext)
+		{
+			wchar_t szNextDate[64] = {};
+			m_pQuoteData->TimeStampToStr(pReqData->nStockID, nNextDate, szNextDate);
+			CA::Unicode2UTF(szNextDate, ackBody.strNextKLTime);
+		}
 		
 		ackBody.vtHistoryKL.clear();
 		ackBody.vtHistoryKL.reserve(nKLNum);
@@ -183,6 +195,7 @@ void CPluginHistoryKL::ReplyAllRequest()
 			AckItem.nTurnoverRate = arKLData[n].nTurnoverRate;
 			AckItem.ddwTDVol = arKLData[n].ddwTDVol;
 			AckItem.ddwTDVal = arKLData[n].ddwTDVal;
+			AckItem.nRaiseRate = arKLData[n].nRaiseRate;		
 			ackBody.vtHistoryKL.push_back(AckItem);
 		}	
 		//m_pQuoteData->DeleteKLDataPointer(arKLData);
@@ -199,12 +212,16 @@ void CPluginHistoryKL::ReplyStockDataReq(StockDataReq *pReq, const QuoteAckDataB
 	ack.head.ddwErrCode = 0;
 	ack.body = data;
 
+	std::set<KLDataField> setField;
+	DoGetFilterField(pReq->req.body.strNeedKLData, setField);
+
 	//tomodify 4
 	CProtoQuote proto;	
 	proto.SetProtoData_Ack(&ack);
+	proto.SetHistoryKLArrFieldFilter(setField);
 
 	Json::Value jsnAck;
-	if ( proto.MakeJson_Ack(jsnAck) )
+	if ( proto.MakeJson_Ack(jsnAck) )//
 	{
 		std::string strOut;
 		CProtoParseBase::ConvJson2String(jsnAck, strOut, true);
@@ -257,26 +274,19 @@ void CPluginHistoryKL::ReleaseAllReqData()
 	m_vtReqData.clear();
 }
 
-int  CPluginHistoryKL::GetMarketTimezone(StockMktType eMkt)
-{
-	switch (eMkt)
-	{
-	case StockMkt_US:
-		return -5;
-		break;
-	default:
-		return 8;
-		break;
-	}
-}
 
-void CPluginHistoryKL::FormatTimestampToDate(int nTimestamp, int nTimezone, std::string &strFmtTime)
+void CPluginHistoryKL::DoGetFilterField(const std::string& strFilter, std::set<KLDataField>& setField)
 {
-	time_t nTimezoneTimestamp = nTimestamp + nTimezone * 3600;		
-	struct tm *stTime = gmtime(&nTimezoneTimestamp);
-	char szBuf[32];
-	sprintf_s(szBuf, "%d-%02d-%02d", stTime->tm_year + 1900, stTime->tm_mon + 1, stTime->tm_mday);
-	strFmtTime = szBuf;
+	setField.clear();
+	CString strDiv = _T(",");
+	std::vector<CString> arFilterStr;
+	CA::DivStr(CString(strFilter.c_str()), strDiv, arFilterStr);
+	for (UINT i = 0; i < arFilterStr.size(); i++)
+	{
+		int nTmp = _ttoi(arFilterStr[i]);
+
+		setField.insert((KLDataField)nTmp);
+	}
 }
 
 void CPluginHistoryKL::DoClearReqInfo(SOCKET socket)

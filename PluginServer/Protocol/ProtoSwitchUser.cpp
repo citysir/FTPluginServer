@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "ProtoUnlockTrade.h"
+#include "ProtoSwitchUser.h"
 #include "CppJsonConv.h"
 #include "../JsonCpp/json_op.h"
 
@@ -7,23 +7,23 @@
 #define new DEBUG_NEW
 #endif
 
-CProtoUnlockTrade::CProtoUnlockTrade()
+CProtoSwitchUser::CProtoSwitchUser()
 {
 	m_pReqData = NULL;
 	m_pAckData = NULL;
 }
 
-CProtoUnlockTrade::~CProtoUnlockTrade()
+CProtoSwitchUser::~CProtoSwitchUser()
 {
 
 }
 
-bool CProtoUnlockTrade::ParseJson_Req(const Json::Value &jsnVal)
+bool CProtoSwitchUser::ParseJson_Req(const Json::Value &jsnVal)
 {
 	CHECK_RET(m_pReqData != NULL, false);
 
 	bool bSuc = true;
-	do 
+	do
 	{
 		bSuc &= ParseProtoHead_Req(jsnVal, m_pReqData->head);
 		CHECK_OP(bSuc, break);
@@ -34,12 +34,12 @@ bool CProtoUnlockTrade::ParseJson_Req(const Json::Value &jsnVal)
 	return bSuc;
 }
 
-bool CProtoUnlockTrade::ParseJson_Ack(const Json::Value &jsnVal)
+bool CProtoSwitchUser::ParseJson_Ack(const Json::Value &jsnVal)
 {
 	CHECK_RET(m_pAckData != NULL, false);
 
 	bool bSuc = true;
-	do 
+	do
 	{
 		bSuc &= ParseProtoHead_Ack(jsnVal, m_pAckData->head);
 		CHECK_OP(bSuc, break);
@@ -55,12 +55,12 @@ bool CProtoUnlockTrade::ParseJson_Ack(const Json::Value &jsnVal)
 }
 
 
-bool CProtoUnlockTrade::MakeJson_Req(Json::Value &jsnVal)
+bool CProtoSwitchUser::MakeJson_Req(Json::Value &jsnVal)
 {
 	CHECK_RET(m_pReqData != NULL, false);
 
 	bool bSuc = true;
-	do 
+	do
 	{
 		bSuc &= MakeProtoHead_Req(jsnVal, m_pReqData->head);
 		CHECK_OP(bSuc, break);
@@ -71,17 +71,17 @@ bool CProtoUnlockTrade::MakeJson_Req(Json::Value &jsnVal)
 	return bSuc;
 }
 
-bool CProtoUnlockTrade::MakeJson_Ack(Json::Value &jsnVal)
+bool CProtoSwitchUser::MakeJson_Ack(Json::Value &jsnVal)
 {
 	CHECK_RET(m_pAckData != NULL, false);
 
 	bool bSuc = true;
-	do 
+	do
 	{
 		bSuc &= MakeProtoHead_Ack(jsnVal, m_pAckData->head);
 		CHECK_OP(bSuc, break);
 
-		//if ( m_pAckData->head.nErrCode == PROTO_ERR_NO_ERROR )
+		if ( m_pAckData->head.ddwErrCode == PROTO_ERR_NO_ERROR )
 		{
 			bSuc &= MakeProtoBody_Ack(jsnVal, *m_pAckData);
 			CHECK_OP(bSuc, break);
@@ -91,20 +91,20 @@ bool CProtoUnlockTrade::MakeJson_Ack(Json::Value &jsnVal)
 	return bSuc;
 }
 
-void CProtoUnlockTrade::SetProtoData_Req(ProtoReqDataType *pData)
+void CProtoSwitchUser::SetProtoData_Req(ProtoReqDataType *pData)
 {
 	m_pReqData = pData;
 }
 
-void CProtoUnlockTrade::SetProtoData_Ack(ProtoAckDataType *pData)
+void CProtoSwitchUser::SetProtoData_Ack(ProtoAckDataType *pData)
 {
 	m_pAckData = pData;
 }
 
 //tomodify 3(数组等复杂结构或单层的结构体)
-bool CProtoUnlockTrade::ParseProtoBody_Req(const Json::Value &jsnVal, ProtoReqDataType &data)
-{	
-	if ( !warn_if_prop_not_set(jsnVal, KEY_REQ_PARAM) )
+bool CProtoSwitchUser::ParseProtoBody_Req(const Json::Value &jsnVal, ProtoReqDataType &data)
+{
+	if (!warn_if_prop_not_set(jsnVal, KEY_REQ_PARAM))
 		return true;
 
 	VT_PROTO_FIELD vtField;
@@ -118,9 +118,9 @@ bool CProtoUnlockTrade::ParseProtoBody_Req(const Json::Value &jsnVal, ProtoReqDa
 }
 
 //tomodify 4(数组等复杂结构或单层的结构体)
-bool CProtoUnlockTrade::ParseProtoBody_Ack(const Json::Value &jsnVal, ProtoAckDataType &data)
+bool CProtoSwitchUser::ParseProtoBody_Ack(const Json::Value &jsnVal, ProtoAckDataType &data)
 {
-	CHECK_RET(warn_if_prop_not_set(jsnVal, KEY_ACK_DATA), false);	
+	CHECK_RET(warn_if_prop_not_set(jsnVal, KEY_ACK_DATA), false);
 
 	VT_PROTO_FIELD vtField;
 	GetProtoBodyField_Ack(vtField, data.body);
@@ -133,10 +133,10 @@ bool CProtoUnlockTrade::ParseProtoBody_Ack(const Json::Value &jsnVal, ProtoAckDa
 }
 
 //tomodify 5(数组等复杂结构或单层的结构体)
-bool CProtoUnlockTrade::MakeProtoBody_Req(Json::Value &jsnVal, const ProtoReqDataType &data)
+bool CProtoSwitchUser::MakeProtoBody_Req(Json::Value &jsnVal, const ProtoReqDataType &data)
 {
 	CHECK_RET(warn_if_prop_exists(jsnVal, KEY_REQ_PARAM), false);
-	
+
 	VT_PROTO_FIELD vtField;
 	GetProtoBodyField_Req(vtField, data.body);
 
@@ -148,9 +148,9 @@ bool CProtoUnlockTrade::MakeProtoBody_Req(Json::Value &jsnVal, const ProtoReqDat
 }
 
 //tomodify 6(数组等复杂结构或单层的结构体)
-bool CProtoUnlockTrade::MakeProtoBody_Ack(Json::Value &jsnVal, const ProtoAckDataType &data)
+bool CProtoSwitchUser::MakeProtoBody_Ack(Json::Value &jsnVal, const ProtoAckDataType &data)
 {
-	CHECK_RET(warn_if_prop_exists(jsnVal, KEY_ACK_DATA), false);	
+	CHECK_RET(warn_if_prop_exists(jsnVal, KEY_ACK_DATA), false);
 
 	VT_PROTO_FIELD vtField;
 	GetProtoBodyField_Ack(vtField, data.body);
@@ -163,30 +163,30 @@ bool CProtoUnlockTrade::MakeProtoBody_Ack(Json::Value &jsnVal, const ProtoAckDat
 }
 
 //tomodify 7
-void CProtoUnlockTrade::GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const ProtoReqBodyType &reqData)
+void CProtoSwitchUser::GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const ProtoReqBodyType &reqData)
 {
 	static BOOL arOptional[] = {
-		FALSE, TRUE, TRUE,
+		TRUE, FALSE, FALSE
 	};
-	static EProtoFildType arFieldType[] = {		
-		ProtoFild_Int32, ProtoFild_StringA, ProtoFild_StringA,
+	static EProtoFildType arFieldType[] = {
+		ProtoFild_Int32, ProtoFild_Int64, ProtoFild_StringA,
 	};
 	static LPCSTR arFieldKey[] = {
-		"Cookie", "Password", "PasswordMD5",
+		"Cookie", "UserID", "PasswordMD5",
 	};
 
-	ProtoReqBodyType &body = const_cast<ProtoReqBodyType &>(reqData);	
-	void *arPtr[] = {		
-		&body.nCookie, &body.strPasswd, &body.strPasswdMD5,
+	ProtoReqBodyType &body = const_cast<ProtoReqBodyType &>(reqData);
+	void *arPtr[] = {
+		&body.nCookie, &body.nUserID, &body.strPasswordMD5,
 	};
- 
+
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
 	CHECK_OP(_countof(arOptional) == _countof(arFieldKey), NOOP);
 	CHECK_OP(_countof(arOptional) == _countof(arPtr), NOOP);
 
 	vtField.clear();
 	PROTO_FIELD field;
-	for ( int n = 0; n < _countof(arOptional); n++ )
+	for (int n = 0; n < _countof(arOptional); n++)
 	{
 		field.bOptional = arOptional[n];
 		field.eFieldType = arFieldType[n];
@@ -211,25 +211,25 @@ void CProtoUnlockTrade::GetProtoBodyField_Req(VT_PROTO_FIELD &vtField, const Pro
 		}
 
 		vtField.push_back(field);
-	}	
+	}
 }
 
 //tomodify 8
-void CProtoUnlockTrade::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const ProtoAckBodyType &ackData)
+void CProtoSwitchUser::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const ProtoAckBodyType &ackData)
 {
 	static BOOL arOptional[] = {
 		FALSE, FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
-		ProtoFild_Int32, ProtoFild_Int32,
+		ProtoFild_Int32,
 	};
 	static LPCSTR arFieldKey[] = {
-		"Cookie", "SvrResult",
+		"Cookie",
 	};
 
 	ProtoAckBodyType &body = const_cast<ProtoAckBodyType &>(ackData);
 	void *arPtr[] = {
-		&body.nCookie, &body.nSvrResult,
+		&body.nCookie,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
@@ -238,7 +238,7 @@ void CProtoUnlockTrade::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Pro
 
 	vtField.clear();
 	PROTO_FIELD field;
-	for ( int n = 0; n < _countof(arOptional); n++ )
+	for (int n = 0; n < _countof(arOptional); n++)
 	{
 		field.bOptional = arOptional[n];
 		field.eFieldType = arFieldType[n];
@@ -261,7 +261,7 @@ void CProtoUnlockTrade::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Pro
 			CHECK_OP(FALSE, NOOP);
 			break;
 		}
-		
+
 		vtField.push_back(field);
-	}	
+	}
 }

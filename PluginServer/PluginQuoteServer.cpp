@@ -85,7 +85,9 @@ void CPluginQuoteServer::InitQuoteSvr(IFTPluginCore* pPluginCore, CPluginNetwork
 	m_plateSubIDs.Init(this, m_pQuoteData);
 	m_BrokerQueue.Init(this, m_pQuoteData);
 	m_GlobalState.Init(this, m_pQuoteData);
-
+	m_SwitchUser.Init(this, m_pQuoteOp);
+	m_HisKLPoints.Init(this, m_pQuoteData);
+	m_Suspend.Init(this, m_pQuoteData);
 }
 
 void CPluginQuoteServer::UninitQuoteSvr()
@@ -115,6 +117,10 @@ void CPluginQuoteServer::UninitQuoteSvr()
 		m_platesetIDs.Uninit();
 		m_plateSubIDs.Uninit();
 		m_BrokerQueue.Uninit();
+		m_GlobalState.Uninit();
+		m_SwitchUser.Uninit();
+		m_HisKLPoints.Uninit();
+		m_Suspend.Uninit();
 
 		m_pQuoteData = NULL;
 		m_pQuoteOp = NULL;
@@ -189,18 +195,35 @@ void CPluginQuoteServer::SetQuoteReqData(int nCmdID, const Json::Value &jsnVal, 
 	case PROTO_ID_QT_PushStockData:
 		m_PushStockData.SetQuoteReqData(nCmdID, jsnVal, sock);
 		break;
+
 	case PROTO_ID_QT_GET_PLATESETIDS:
 		m_platesetIDs.SetQuoteReqData(nCmdID, jsnVal, sock);
 		break;
+
 	case PROTO_ID_QT_GET_PLATESUBIDS:
 		m_plateSubIDs.SetQuoteReqData(nCmdID, jsnVal, sock);
 		break;
+
 	case PROTO_ID_QT_GET_BROKER_QUEUE:
 		m_BrokerQueue.SetQuoteReqData(nCmdID, jsnVal, sock);
 		break;
+
 	case PROTO_ID_QT_GET_GLOBAL_STATE:
 		m_GlobalState.SetQuoteReqData(nCmdID, jsnVal, sock);
 		break;
+
+	case PROTO_ID_QT_SWITCH_USER:
+		m_SwitchUser.SetQuoteReqData(nCmdID, jsnVal, sock);
+		break;
+
+	case PROTO_ID_QT_GET_HISKL_POINTS:
+		m_HisKLPoints.SetQuoteReqData(nCmdID, jsnVal, sock);
+		break;
+
+	case PROTO_ID_QT_GET_SUSPEND:
+		m_Suspend.SetQuoteReqData(nCmdID, jsnVal, sock);
+		break;
+
 	default:
 		CHECK_OP(false, NOOP);
 		BasicPrice_Ack Ack;
@@ -344,6 +367,12 @@ QueryDataErrCode CPluginQuoteServer::QueryPlateSubIDList(DWORD* pdwCookie, INT64
 	return eRet;
 }
 
+QueryDataErrCode CPluginQuoteServer::QueryBatchHisKLPoints(INT64 *parnStockID, int nStockNum, LPCWSTR *parTimePoints, int nTimeNum, int nKLType, int nRehabType, NoDataMode eNodataMode, int nMaxKLItenNum, DWORD& dwCookie)
+{
+	CHECK_RET(m_pQuoteOp, QueryData_FailUnknown);
+	return m_pQuoteOp->QueryBatchHisKLPoints(PLUGIN_GUID, parnStockID, nStockNum, parTimePoints, nTimeNum, nKLType, nRehabType, eNodataMode, nMaxKLItenNum, dwCookie);
+}
+
 void CPluginQuoteServer::CloseSocket(SOCKET sock)
 {
 	if (m_pQuoteOp)
@@ -382,6 +411,8 @@ void CPluginQuoteServer::CloseSocket(SOCKET sock)
 	m_plateSubIDs.NotifySocketClosed(sock);
 	m_BrokerQueue.NotifySocketClosed(sock);
 	m_GlobalState.NotifySocketClosed(sock);
+
+	m_Suspend.NotifySocketClosed(sock);
 }
 
 void  CPluginQuoteServer::OnChanged_PriceBase(INT64  ddwStockHash)
@@ -519,14 +550,19 @@ void CPluginQuoteServer::OnReqPlateStockIDs(int nCSResult, DWORD dwCookie)
 	m_plateSubIDs.NotifyQueryPlateSubIDs(nCSResult, dwCookie);
 }
 
+void CPluginQuoteServer::OnReqBatchHisKLPoints(DWORD dwCookie, Quote_StockKLData *arStockKLData, int nNum)
+{
+	m_HisKLPoints.NotifyQueryBatchHisKLPoints(dwCookie, arStockKLData, nNum);
+}
+
 void CPluginQuoteServer::OnTimeEvent(UINT nEventID)
 {
-	if (0 == m_nTimerIDRefreshRTKL || m_nTimerIDRefreshRTKL != nEventID)
+	if (!m_pQuoteData || 
+		0 == m_nTimerIDRefreshRTKL || m_nTimerIDRefreshRTKL != nEventID)
 	{
 		return;
 	}
 
-	CHECK_RET(m_pQuoteData, NORET);
 	bool bRTKLFreshing = false;
 	std::vector<tagRTKLDataRefresh>::iterator it = m_vtRTKLRefresh.begin();
 	for (; it != m_vtRTKLRefresh.end(); it++)

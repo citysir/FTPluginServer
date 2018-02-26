@@ -88,6 +88,9 @@ void CPluginPushBatchBasic::PushStockData(INT64 nStockID, SOCKET sock)
 		m_pQuoteData->GetStockInfoByHashVal(nStockID, eMkt, szStockCode, szStockName);
 		Item.nStockMarket = (int)eMkt;
 		CA::Unicode2UTF(szStockCode, Item.strStockCode);
+
+		Item.nPriceSpread = m_pQuoteData->GetStockPriceSpread(nStockID, Item.nCur);
+
 		ackbody.vtAckBatchBasic.push_back(Item);
 
 		CProtoQuote::ProtoAckDataType ack;

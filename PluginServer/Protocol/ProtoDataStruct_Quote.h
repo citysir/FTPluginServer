@@ -32,6 +32,7 @@ struct BasicPriceAckBody
 	int nStockMarket;
 	std::string strStockCode;
 	DWORD dwTime;
+	int nPriceSpread;
 
 	BasicPriceAckBody()
 	{
@@ -47,6 +48,7 @@ struct BasicPriceAckBody
 
 		nStockMarket = 0;
 		dwTime = 0;
+		nPriceSpread = 0;
 	}
 };
 
@@ -625,6 +627,8 @@ struct SnapshotAckItem
 	UINT32 nLostSize; //每手
 	std::string strUpdateTime; //增加字符串时间
 
+	int nPriceSpread;
+
 	//正股类型数据
 	struct tagEquitiesData
 	{
@@ -707,6 +711,7 @@ struct SnapshotAckItem
 		nTatalMarketVal = 0;
 		nCircularMarketVal = 0;
 		nLostSize = 0;
+		nPriceSpread = 0;
 	}
 };
 
@@ -763,6 +768,7 @@ struct BatchBasicAckItem
 	int nCur;
 	int nSuspension;
 	int nTurnoverRate;
+	int nPriceSpread;
 
 	INT64 nVolume;
 	INT64 nValue;
@@ -782,6 +788,7 @@ struct BatchBasicAckItem
 		nCur = 0;
 		nSuspension = 0;
 		nTurnoverRate = 0;
+		nPriceSpread = 0;
 
 		nVolume = 0;
 		nValue = 0;
@@ -815,6 +822,8 @@ struct	HistoryKLReqBody
 	int nRehabType;
 	int nKLType;
 	int nStockMarket;
+	int nMaxAckKLItemNum;
+	std::string strNeedKLData;//标志组合，指定需要返回的字段，节省回包大小
 	std::string strStockCode;
 	std::string strStartDate;
 	std::string strEndDate;
@@ -824,6 +833,7 @@ struct	HistoryKLReqBody
 		nRehabType = 0;
 		nKLType = 0;
 		nStockMarket = 0;
+		nMaxAckKLItemNum = 0;
 	}
 };
 
@@ -837,6 +847,7 @@ struct HistoryKLAckItem
 
 	int   nPERatio; //市盈率(三位小数)
 	int   nTurnoverRate;//换手率(正股及指数的日/周/月K线)
+	int	  nRaiseRate;//涨跌幅
 	INT64 ddwTDVol; 
 	INT64 ddwTDVal;
 
@@ -849,6 +860,7 @@ struct HistoryKLAckItem
 
 		nPERatio = 0;
 		nTurnoverRate = 0;
+		nRaiseRate = 0;
 		ddwTDVol = 0;
 		ddwTDVal = 0;
 	}
@@ -861,16 +873,22 @@ struct HistoryKLAckBody
 	int nRehabType;
 	int nKLType;
 	int nStockMarket;
+	int nMaxAckKLItemNum;
+	int nHasNext;
+	std::string strNextKLTime;
 	std::string strStockCode;
 	std::string strStartDate;
 	std::string strEndDate;
+	std::string strNeedKLData;
 	VT_HISTORY_KL vtHistoryKL;
-
+	
 	HistoryKLAckBody()
 	{
 		nRehabType = 0;
 		nKLType = 0;
 		nStockMarket = 0;
+		nHasNext = 0;
+		nMaxAckKLItemNum = 0;
 	}
 };
 
@@ -1049,6 +1067,8 @@ struct PushBatchBasicAckItem
 	int nCur;
 	int nSuspension;
 	int nTurnoverRate;
+	int nPriceSpread;
+
 	INT64 nVolume;
 	INT64 nValue;
 	INT64 nAmpli;
@@ -1070,6 +1090,7 @@ struct PushBatchBasicAckItem
 		nVolume = 0;
 		nValue = 0;
 		nAmpli = 0;
+		nPriceSpread = 0;
 	}
 };
 
@@ -1574,6 +1595,7 @@ struct GlobalStateAckBody
 	int nTradeLogined;
 
 	UINT64 nSvrTimeStamp;
+	std::wstring wstrVer; //版本号
 
 	GlobalStateAckBody()
 	{
@@ -1591,4 +1613,201 @@ struct	GlobalState_Ack
 {
 	ProtoHead			head;
 	GlobalStateAckBody	body;
+};
+
+//切换帐号
+struct	SwitchUserReqBody
+{
+	int nCookie;
+	UINT64 nUserID;
+	std::string strPasswordMD5;
+
+	SwitchUserReqBody()
+	{
+		nCookie = 0;
+		nUserID = 0;
+	}
+};
+
+struct SwitchUserAckBody
+{
+	int nCookie;
+	SwitchUserAckBody()
+	{
+		nCookie = 0;
+	}
+};
+
+struct SwitchUser_Req
+{
+	ProtoHead				head;
+	SwitchUserReqBody		body;
+};
+
+struct SwitchUser_Ack
+{
+	ProtoHead				head;
+	SwitchUserAckBody		body;
+};
+
+//
+struct ReqParamStockItem
+{
+	int nStockMarket; // enum StockMktType
+	std::string strStockCode;
+
+	ReqParamStockItem()
+	{
+		nStockMarket = 0;
+	}
+};
+
+typedef std::vector<ReqParamStockItem> VT_REQ_STOCK_PARAM;
+
+struct HisKLPointsReqBody
+{
+	int nCookie;
+	int nRehabType;
+	int nKLType;
+
+	int nMaxAckKLItemNum;
+	int nNodataMode;//没有数据怎么处理，参数控制，取前一个值或空值
+	VT_REQ_STOCK_PARAM vtStock;
+	std::string strTimePoints;
+	std::string strNeedKLData;//标志组合，指定需要返回的字段，节省回包大小
+
+	HisKLPointsReqBody()
+	{
+		nCookie = 0;
+		nNodataMode = 0;
+		nRehabType = 0;
+		nMaxAckKLItemNum = 0;
+		nNodataMode = 0;
+	}
+};
+
+struct HisKLPointsAckItem
+{
+	int		nDataValid;
+	std::wstring wstrTimePoint;//请求的时间点
+	std::wstring wstrTime;//实际的时间
+	INT64   nOpenPrice;
+	INT64   nClosePrice;
+	INT64   nHighestPrice;
+	INT64   nLowestPrice;
+
+	int   nPERatio; //市盈率(三位小数)
+	int   nTurnoverRate;//换手率(正股及指数的日/周/月K线)
+	int	  nRaiseRate;//涨跌幅
+	INT64 ddwTDVol;
+	INT64 ddwTDVal;
+
+	HisKLPointsAckItem()
+	{
+		nDataValid = 0;
+		nOpenPrice = 0;
+		nClosePrice = 0;
+		nHighestPrice = 0;
+		nLowestPrice = 0;
+
+		nPERatio = 0;
+		nTurnoverRate = 0;
+		nRaiseRate = 0;
+		ddwTDVol = 0;
+		ddwTDVal = 0;
+	}
+};
+
+typedef std::vector<HisKLPointsAckItem>	VT_HISKL_PONTS;
+
+struct HISKL
+{
+	int nStockMarket;
+	std::string strStockCode;
+	VT_HISKL_PONTS vtKL;
+};
+typedef std::vector<HISKL>	VT_HISKL_ARR;
+
+struct HisKLPointsAckBody
+{
+	int nCookie;
+	int nHasNext;
+	int nRehabType;
+	int nKLType;
+
+	int nMaxAckKLItemNum;
+	int nNodataMode;
+	VT_REQ_STOCK_PARAM vtStock;
+	std::string strTimePoints;
+	std::string strNeedKLData;
+
+	VT_HISKL_ARR vtHisKL;//多支股票的历史K线点
+	
+	HisKLPointsAckBody()
+	{
+		nCookie = 0;
+	}
+};
+
+struct HisKLPoints_Req
+{
+	ProtoHead				head;
+	HisKLPointsReqBody		body;
+};
+
+struct HisKLPoints_Ack
+{
+	ProtoHead				head;
+	HisKLPointsAckBody		body;
+};
+
+//停牌信息
+struct SuspendReqBody
+{
+	int nCookie;
+	VT_REQ_STOCK_PARAM vtStock;
+	std::string strStartDate;
+	std::string strEndDate;
+	SuspendReqBody()
+	{
+		nCookie = 0;
+	}
+};
+
+struct SuspendInfoItem
+{
+	INT64 nSuspendTimestamp;
+	std::string strSuspendTime;
+};
+
+struct SuspendAckItem
+{
+	int nStockMarket;
+	std::string strStockCode;
+	std::vector<SuspendInfoItem> vtSupend;
+};
+
+struct SuspendAckBody
+{
+	int nCookie;
+	VT_REQ_STOCK_PARAM vtStock;
+	std::string strStartDate;
+	std::string strEndDate;
+	std::vector<SuspendAckItem> vtStockSupend;
+	SuspendAckBody()
+	{
+		nCookie = 0;
+	}
+};
+
+struct Suspend_Req
+{
+	ProtoHead				head;
+	SuspendReqBody			body;
+};
+
+struct Suspend_Ack
+{
+	ProtoHead				head;
+	SuspendAckBody			body;
 };

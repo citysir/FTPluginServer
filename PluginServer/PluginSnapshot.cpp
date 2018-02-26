@@ -206,6 +206,7 @@ void CPluginSnapshot::NotifySnapshotResult(DWORD dwCookie, PluginStockSnapshot *
 		snapDst.turnover_ratio = int(round(snapSrc.turnover_ratio * 100000));
 		
 		snapDst.nLostSize = snapSrc.nLotSize;
+		snapDst.nPriceSpread = m_pQuoteData->GetStockPriceSpread(snapDst.nStockID, snapDst.open_price);
 
 		wchar_t szTime[64] = {0};
 		if (m_pQuoteData)

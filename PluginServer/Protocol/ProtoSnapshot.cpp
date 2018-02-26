@@ -133,6 +133,7 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			FALSE, FALSE, TRUE,
 			
 			TRUE, TRUE, TRUE,
+			TRUE,
 
 			TRUE, TRUE, TRUE,
 			TRUE, TRUE, TRUE,
@@ -155,6 +156,7 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int64, 
 
 			ProtoFild_Int64, ProtoFild_Int32, ProtoFild_StringA,
+			ProtoFild_Int32,
 
 			ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32,
 			ProtoFild_Int64, ProtoFild_StringA, ProtoFild_StringA,
@@ -177,6 +179,7 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			"TurnoverRate", "RetErrCode", "TotalMarketVal",
 
 			"CircularMarketVal", "LotSize", "UpdateTimeStr",
+			"PriceSpread",
 
 			//ÎÐÂÖÐÅÏ¢
 			"Wrt_Valid", "Wrt_Type", "Wrt_ConversionRatio", 
@@ -203,6 +206,7 @@ void CProtoSnapshot::GetStructField4ParseJson_v0(bool bReqOrAck, int nLevel, con
 			&pAckItem->turnover_ratio, &pAckItem->ret_err, &pAckItem->nTatalMarketVal, 
 			
 			&pAckItem->nCircularMarketVal, &pAckItem->nLostSize, &pAckItem->strUpdateTime,
+			&pAckItem->nPriceSpread,
 
 			&pAckItem->stWrtData.bDataValid, &pAckItem->stWrtData.nWarrantType, &pAckItem->stWrtData.nConversionRatio,
 			&pAckItem->stWrtData.nStrikePrice, &pAckItem->stWrtData.strMaturityData, &pAckItem->stWrtData.strEndtradeDate,

@@ -100,6 +100,25 @@ void CPluginUnlockTrade::SetTradeReqData(int nCmdID, const Json::Value &jsnVal, 
 		return;
 	}
 
+	UnlockTradeReqBody &body = req.body;
+	std::wstring strPasswd;
+	CA::UTF2Unicode(body.strPasswd.c_str(), strPasswd);
+	std::wstring strPasswdMD5;
+	CA::UTF2Unicode(body.strPasswdMD5.c_str(), strPasswdMD5);
+
+	if (strPasswd.empty() && strPasswdMD5.empty())
+	{
+		CHECK_OP(false, NORET);
+		TradeAckType ack;
+		ack.head = req.head;
+		ack.head.ddwErrCode = PROTO_ERR_PARAM_ERR;
+		CA::Unicode2UTF(L"²ÎÊý´íÎó£¡", ack.head.strErrDesc);
+		ack.body.nCookie = req.body.nCookie;
+		ack.body.nSvrResult = Trade_SvrResult_Failed;
+		HandleTradeAck(&ack, sock);
+		return;
+	}
+
 	StockDataReq *pReq = new StockDataReq;
 	CHECK_RET(pReq, NORET);
 	pReq->sock = sock;
@@ -110,10 +129,7 @@ void CPluginUnlockTrade::SetTradeReqData(int nCmdID, const Json::Value &jsnVal, 
 	m_vtReqData.push_back(pReq);
 
 	//tomodify 3
-	UnlockTradeReqBody &body = req.body;
-	std::wstring strPasswd;
-	CA::UTF2Unicode(body.strPasswd.c_str(), strPasswd);
-	bool bRet = m_pTradeOp->UnlockTrade((UINT32*)&pReq->dwLocalCookie, strPasswd.c_str());
+	bool bRet = m_pTradeOp->UnlockTrade((UINT32*)&pReq->dwLocalCookie, strPasswd.c_str(), strPasswdMD5.c_str());
 
 	if (bRet)
 	{

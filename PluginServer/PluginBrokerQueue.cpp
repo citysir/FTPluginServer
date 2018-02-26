@@ -289,11 +289,7 @@ void CPluginBrokerQueue::ReplyAllReadyReq()
 		CProtoQuote::ProtoReqBodyType &reqBody = pReqData->req.body;
 		QuoteAckDataBody ackBody;
 
-		if (!DoFillAckDataBody(pReqData->nStockID, ackBody))
-		{
-			continue;
-		}
-
+		DoFillAckDataBody(pReqData->nStockID, ackBody);
 		ReplyStockDataReq(pReqData, ackBody);
 
 		it = vtReqData.erase(it);

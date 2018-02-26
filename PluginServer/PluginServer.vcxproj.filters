@@ -458,6 +458,24 @@
     <ClInclude Include="PluginQueryUSHisDeal.h">
       <Filter>Server\trade_us</Filter>
     </ClInclude>
+    <ClInclude Include="Protocol\ProtoSwitchUser.h">
+      <Filter>Protocol\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginSwitchUser.h">
+      <Filter>Server\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoHisKLPoints.h">
+      <Filter>Protocol\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginHisKLPoints.h">
+      <Filter>Server\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol\ProtoSuspend.h">
+      <Filter>Protocol\quote</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginSuspend.h">
+      <Filter>Server\quote</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="JsonCpp\json_internalarray.inl">
@@ -839,6 +857,24 @@
     </ClCompile>
     <ClCompile Include="PluginQueryUSHisDeal.cpp">
       <Filter>Server\trade_us</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoSwitchUser.cpp">
+      <Filter>Protocol\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginSwitchUser.cpp">
+      <Filter>Server\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoHisKLPoints.cpp">
+      <Filter>Protocol\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginHisKLPoints.cpp">
+      <Filter>Server\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="Protocol\ProtoSuspend.cpp">
+      <Filter>Protocol\quote</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginSuspend.cpp">
+      <Filter>Server\quote</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

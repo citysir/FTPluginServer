@@ -21,6 +21,7 @@ CPluginPlaceOrder_HK::CPluginPlaceOrder_HK()
 {	
 	m_pTradeOp = NULL;
 	m_pTradeServer = NULL;
+	m_pQuoteData = NULL;
 	m_bStartTimerHandleTimeout = FALSE;
 }
 
@@ -29,12 +30,12 @@ CPluginPlaceOrder_HK::~CPluginPlaceOrder_HK()
 	Uninit();
 }
 
-void CPluginPlaceOrder_HK::Init(CPluginHKTradeServer* pTradeServer, ITrade_HK*  pTradeOp)
+void CPluginPlaceOrder_HK::Init(CPluginHKTradeServer* pTradeServer, ITrade_HK*  pTradeOp, IFTQuoteData* pQuoteData)
 {
 	if ( m_pTradeServer != NULL )
 		return;
 
-	if ( pTradeServer == NULL || pTradeOp == NULL )
+	if ( pTradeServer == NULL || pTradeOp == NULL || pQuoteData == NULL)
 	{
 		ASSERT(false);
 		return;
@@ -42,6 +43,7 @@ void CPluginPlaceOrder_HK::Init(CPluginHKTradeServer* pTradeServer, ITrade_HK*  
 
 	m_pTradeServer = pTradeServer;
 	m_pTradeOp = pTradeOp;
+	m_pQuoteData = pQuoteData;
 	m_TimerWnd.SetEventInterface(this);
 	m_TimerWnd.Create();
 
@@ -76,7 +78,7 @@ void CPluginPlaceOrder_HK::SetTradeReqData(int nCmdID, const Json::Value &jsnVal
 	proto.SetProtoData_Req(&req);
 	if ( !proto.ParseJson_Req(jsnVal) )
 	{
-		CHECK_OP(false, NORET);
+		CHECK_OP(false, NOOP);
 		TradeAckType ack;
 		ack.head = req.head;
 		ack.head.ddwErrCode = PROTO_ERR_PARAM_ERR;
@@ -90,7 +92,7 @@ void CPluginPlaceOrder_HK::SetTradeReqData(int nCmdID, const Json::Value &jsnVal
 
 	if (req.body.nEnvType == Trade_Env_Real && !IManage_SecurityNum::IsSafeSocket(sock))
 	{
-		CHECK_OP(false, NORET);
+		CHECK_OP(false, NOOP);
 		TradeAckType ack;
 		ack.head = req.head;
 		ack.head.ddwErrCode = PROTO_ERR_UNKNOWN_ERROR;
@@ -103,6 +105,18 @@ void CPluginPlaceOrder_HK::SetTradeReqData(int nCmdID, const Json::Value &jsnVal
 	}
 
 	CHECK_RET(req.head.nProtoID == nCmdID && req.body.nCookie, NORET);
+	if (req.body.nQty <= 0)
+	{
+		TradeAckType ack;
+		ack.head = req.head;
+		ack.head.ddwErrCode = PROTO_ERR_PARAM_ERR;
+		CA::Unicode2UTF(L"²ÎÊý´íÎó£¡", ack.head.strErrDesc);
+		ack.body.nCookie = req.body.nCookie;
+		ack.body.nSvrResult = Trade_SvrResult_Failed;
+		ack.body.nEnvType = req.body.nEnvType;
+		HandleTradeAck(&ack, sock);
+		return;
+	}
 
 	StockDataReq *pReq = new StockDataReq;
 	CHECK_RET(pReq, NORET);
@@ -114,6 +128,9 @@ void CPluginPlaceOrder_HK::SetTradeReqData(int nCmdID, const Json::Value &jsnVal
 	PlaceOrderReqBody &body = req.body;
 	std::wstring strCode;
 	CA::UTF2Unicode(body.strCode.c_str(), strCode);
+
+	body.nPrice = UtilPlugin::PlaceOrderRegularPrice(IFTStockUtil::GetStockHashVal(strCode.c_str(), StockMkt_HK),
+			body.nPrice, (PlaceOrderPriceRegularMode)body.nPriceRegularMode, m_pQuoteData);
 	int nReqResult = 0;
 	bool bRet = m_pTradeOp->PlaceOrder((Trade_Env)body.nEnvType, (UINT*)&pReq->dwLocalCookie, (Trade_OrderType_HK)body.nOrderType, 
 		(Trade_OrderSide)body.nOrderDir, strCode.c_str(), body.nPrice, body.nQty, &nReqResult);

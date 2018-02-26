@@ -56,7 +56,7 @@ void CPluginHKTradeServer::InitTradeSvr(IFTPluginCore* pPluginCore, CPluginNetwo
 		return;
 	}	
 
-	m_PlaceOrder.Init(this, m_pTradeOp);
+	m_PlaceOrder.Init(this, m_pTradeOp, pQuoteData);
 	m_ChangeOrder.Init(this, m_pTradeOp);
 	m_SetOrderStatus.Init(this, m_pTradeOp);
 	m_UnlockTrade.Init(this, m_pTradeOp);

@@ -26,6 +26,7 @@ enum StockMktType
 	StockMkt_SZ = 4,  //深股
 	StockMkt_Feature_Old = 5,  //旧的期货 code: 999000, 999001 （旧期货分时数据在一天连续）
 	StockMkt_Feature_New = 6,  //新期货 code: 999010, 999011 （新期货分时数据会跨天，与传统软件保持一致）
+	StockMkt_US_Option = 7,  //美股期权
 };
 #define  IsValidMktID(mkt)  ((int)mkt >= (int)StockMkt_HK && (int)mkt <= (int)StockMkt_Feature_New)
 
@@ -48,7 +49,7 @@ enum QueryDataErrCode
 	QueryData_FailCodeNoFind = 3,	//代码没找到(也有可能是市场类型错了)
 	QueryData_FailGuidNoFind = 4,	//插件GUID传错
 	QueryData_FailNoImplInf = 5,		//行情接口未完成
-	
+
 	QueryData_FailFreqLimit = 7,	//查询频率限制导致失败
 	QueryData_FailNetwork = 8,		//网络异常，发送失败
 	QueryData_FailErrParam = 9,		//参数错误
@@ -103,6 +104,37 @@ enum PluginSecurityType
 	PluginSecurity_ETF = 4,
 	PluginSecurity_Warrant = 5, //涡轮牛熊		
 	PluginSecurity_Index = 6,
+};
+
+#define KLDataField_NoFilter  ((KLDataField)-100)
+
+enum KLDataField
+{
+	KLDataField_TimeStr = 1,
+	KLDataField_Open = 2,
+	KLDataField_Close = 3,
+	KLDataField_Highest = 4,
+	KLDataField_Lowest = 5,
+	KLDataField_PERate = 6,
+	KLDataField_TurnoverRate = 7,
+	KLDataField_TDVol = 8,
+	KLDataField_TDVal = 9,
+	KLDataField_RaiseRate = 10,
+};
+
+enum NoDataMode
+{
+	NoDataMode_Empty = 0,
+	NoDataMode_Forward = 1,//往前取值
+	NoDataMode_Backward = 2,//向后取值
+};
+
+enum DataValid
+{
+	DataValid_NoData = 0,
+	DataValid_HasData = 1,
+	DataValid_PreData = 2,
+	DataValid_NextData = 3,
 };
 
 /**
@@ -183,6 +215,7 @@ typedef struct tagQuoteStockRTData
 typedef struct tagQueryStockKLData
 {
 	int   nDataStatus;
+	DataValid eDataVaild;
 	DWORD dwTime;
 
 	INT64   nOpenPrice;
@@ -193,9 +226,11 @@ typedef struct tagQueryStockKLData
 
 	int   nPERatio; //市盈率(三位小数)
 	int   nTurnoverRate;//换手率(正股及指数的日/周/月K线)
+	int	  nRaiseRate;//涨跌幅,历史K线返回
 
 	INT64 ddwTDVol;
 	INT64 ddwTDVal;
+
 }Quote_StockKLData, *LPQuote_StockKLData;
 
 typedef struct tagSubInfo
@@ -245,7 +280,7 @@ typedef struct tagPluginStockInfo
 	PluginSecurityType nSecType;
 	WCHAR chSimpName[64];
 	WCHAR chCodeSig[16];
-	int nSubType; 
+	int nSubType;
 	INT64 nOwnerStockID;
 	WCHAR chListDate[12];
 }PluginStockInfo, *LPPluginStockInfo;
@@ -491,6 +526,10 @@ typedef struct tagNNGlobalState
 
 	UINT64 nSvrTimeStamp;
 
+	int nVerMain;
+	int nVerSub;
+	int nVerBuild;
+
 	tagNNGlobalState()
 	{
 		bQuoteSvrLogined = false;
@@ -502,5 +541,9 @@ typedef struct tagNNGlobalState
 		eMktUS = FT_MARKET_STATUS_NONE;
 		eMktSH = FT_MARKET_STATUS_NONE;
 		eMktSZ = FT_MARKET_STATUS_NONE;
+
+		nVerMain = 0;
+		nVerSub = 0;
+		nVerBuild = 0;
 	}
 }NNGlobalState;

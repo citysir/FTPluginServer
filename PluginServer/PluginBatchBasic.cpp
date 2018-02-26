@@ -281,6 +281,8 @@ bool CPluginBatchBasic::InnerTryFillReplyData(const StockDataReq* pReq, QuoteAck
 			Item.strDate = szDate;
 			Item.strTime = szTime;
 
+			Item.nPriceSpread = m_pQuoteData->GetStockPriceSpread(nStockID, Item.nCur);
+
 			ackBody.vtAckBatchBasic.push_back(Item);
 		}
 		else

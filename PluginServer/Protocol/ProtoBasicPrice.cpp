@@ -220,28 +220,32 @@ void CProtoBasicPrice::GetProtoBodyField_Ack(VT_PROTO_FIELD &vtField, const Prot
 	static BOOL arOptional[] = {
 		FALSE, FALSE, FALSE,
 		FALSE, FALSE, FALSE,
-		FALSE, FALSE,
-		FALSE, FALSE, FALSE, FALSE,
+		FALSE, FALSE,FALSE, 
+		FALSE, FALSE, FALSE,
+		FALSE,
 	};
 	static EProtoFildType arFieldType[] = {
 		ProtoFild_Int32, ProtoFild_Int32, ProtoFild_Int32, 
 		ProtoFild_Int32, ProtoFild_Int64, ProtoFild_Int64,
-		ProtoFild_Int32, ProtoFild_Int32,
-		ProtoFild_Int32, ProtoFild_StringA, ProtoFild_Int32, ProtoFild_Int32
+		ProtoFild_Int32, ProtoFild_Int32,ProtoFild_Int32, 
+		ProtoFild_StringA, ProtoFild_Int32, ProtoFild_Int32,
+		ProtoFild_Int32,
 	};
 	static LPCSTR arFieldKey[] = {
 		"High",	"Open",	"Low", 
 		"Close", "Volume", "Turnover",
-		"LastClose","CurPrice",
-		"Market",	"StockCode", "Time", "LotSize"
+		"LastClose","CurPrice","Market",	
+		"StockCode", "Time", "LotSize",
+		"PriceSpread",
 	};
 
 	ProtoAckBodyType &body = const_cast<ProtoAckBodyType &>(ackData);
 	void *arPtr[] = {
 		&body.nHigh,	&body.nOpen,	&body.nLow,
 		&body.nClose,	&body.nVolume,	&body.nTurnover,
-		&body.nLastClose,&body.nCur,
-		&body.nStockMarket,	&body.strStockCode, &body.dwTime, &body.nLotSize
+		&body.nLastClose,&body.nCur,&body.nStockMarket,
+		&body.strStockCode, &body.dwTime, &body.nLotSize,
+		&body.nPriceSpread,
 	};
 
 	CHECK_OP(_countof(arOptional) == _countof(arFieldType), NOOP);
